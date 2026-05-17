@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply font-serif bg-cream-300 text-brand-text antialiased;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply min-h-screen flex flex-col;
+  }
+}
+
+/* Soporte para animaciones de View Transitions de Astro */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}

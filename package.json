@@ -12,6 +12,20 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.3.3"
+    "@astrojs/cloudflare": "^13.5.1",
+    "@astrojs/react": "^5.0.5",
+    "@astrojs/tailwind": "^6.0.2",
+    "@supabase/supabase-js": "^2.105.4",
+    "astro": "^6.3.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10.4.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
   }
 }
