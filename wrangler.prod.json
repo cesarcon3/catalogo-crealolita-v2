@@ -10,5 +10,17 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "rules": [
+    {
+      "action": "block",
+      "expression": "(http.request.uri.path eq \"/admin/login\" and http.request.method eq \"POST\")",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 60,
+        "requests_per_period": 5,
+        "mitigation_timeout": 600
+      }
+    }
+  ]
 }

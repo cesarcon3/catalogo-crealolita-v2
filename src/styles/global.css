@@ -1,15 +1,37 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, sans-serif;
+  
+  /* Paleta Creaciones Lolita */
+  --color-cream-100: #FFF8E1;
+  --color-cream-200: #FAF3E0;
+  --color-cream-300: #F5F5DC;
+  
+  --color-gold-light: #E5C547;
+  --color-gold: #D4AF37;
+  --color-gold-dark: #B8941F;
+  
+  --color-brand-text: #3D3D3D;
+  --color-brand-muted: #6B6B6B;
+  --color-brand-border: #E8D7C3;
+}
 
 @layer base {
   html {
-    @apply font-serif bg-cream-300 text-brand-text antialiased;
+    font-family: var(--font-serif);
+    background-color: var(--color-cream-300);
+    color: var(--color-brand-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
   }
   
   body {
-    @apply min-h-screen flex flex-col;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 }
 

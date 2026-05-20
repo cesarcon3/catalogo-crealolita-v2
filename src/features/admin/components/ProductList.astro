@@ -1,0 +1,140 @@
+---
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import Button from '@/ui/components/Button.astro';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+const { data: rawProducts, error } = await supabase
+  .from('products')
+  .select(`
+    *, 
+    categories(name),
+    product_images(storage_path, is_primary)
+  `)
+  .order('created_at', { ascending: false });
+
+const products = (rawProducts || []).map((product) => {
+  const images = product.product_images || [];
+  const primaryImage = images.find((img) => img.is_primary) || images[0];
+  
+  let thumbnailUrl = null;
+  if (primaryImage) {
+    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(primaryImage.storage_path);
+    thumbnailUrl = urlData.publicUrl;
+  }
+
+  const categoryData = product.categories;
+  const categoryName = Array.isArray(categoryData) ? categoryData[0]?.name : categoryData?.name;
+
+  return {
+    ...product,
+    categoryName,
+    thumbnailUrl,
+    imageCount: images.length
+  };
+});
+---
+
+<div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+  <div class="p-6 border-b border-brand-border flex justify-between items-center bg-cream-100/50">
+    <div>
+      <h2 class="text-xl font-bold text-brand-text">Catálogo de Productos</h2>
+      <p class="text-sm text-brand-muted mt-1">Gestiona los artículos, precios, disponibilidad y fotografías.</p>
+    </div>
+    <Button href="/admin/productos/nuevo" variant="primary" size="sm">
+      + Nuevo Producto
+    </Button>
+  </div>
+
+  {error && (
+    <div class="p-4 bg-red-50 text-red-600 border-b border-red-100">
+      Error al cargar los productos: {error.message}
+    </div>
+  )}
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
+          <th class="p-4 font-medium w-16 text-center">Foto</th>
+          <th class="p-4 font-medium">Producto</th>
+          <th class="p-4 font-medium">Categoría</th>
+          <th class="p-4 font-medium">Precio</th>
+          <th class="p-4 font-medium">Tipo Venta</th>
+          <th class="p-4 font-medium">Estado</th>
+          <th class="p-4 font-medium text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-brand-border">
+        {products.length === 0 ? (
+          <tr>
+            <td colspan="7" class="p-8 text-center text-brand-muted italic">
+              No hay productos registrados aún.
+            </td>
+          </tr>
+        ) : (
+          products.map((product) => (
+            <tr class="hover:bg-cream-50 transition-colors">
+              
+              <td class="p-4">
+                {product.thumbnailUrl ? (
+                  <div class="relative w-12 h-12 flex-shrink-0">
+                    <img 
+                      src={product.thumbnailUrl} 
+                      alt={`Miniatura de ${product.name}`} 
+                      class="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm"
+                      loading="lazy"
+                    />
+                    {product.imageCount > 1 && (
+                      <span class="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white" title={`${product.imageCount} imágenes en total`}>
+                        {product.imageCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div class="w-12 h-12 rounded-lg bg-cream-200 border-2 border-brand-border border-dashed flex items-center justify-center text-brand-muted shadow-sm" title="Producto sin fotografías">
+                    <span class="text-lg opacity-50">📷</span>
+                  </div>
+                )}
+              </td>
+
+              <td class="p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <p class="font-semibold text-brand-text line-clamp-1" title={product.name}>{product.name}</p>
+                  {product.is_featured && (
+                    <span class="px-2 py-0.5 bg-pink-50 text-pink-600 border border-pink-200 text-[10px] font-bold rounded-full whitespace-nowrap shadow-sm" title="Destacado en la página de inicio">
+                      ⭐ Destacado
+                    </span>
+                  )}
+                </div>
+                <p class="text-xs text-brand-muted">{product.slug}</p>
+              </td>
+
+              <td class="p-4 text-sm text-brand-muted whitespace-nowrap">
+                {product.categoryName || 'Sin categoría'}
+              </td>
+              <td class="p-4 font-medium whitespace-nowrap">
+                {product.currency} {product.price.toFixed(2)}
+              </td>
+              <td class="p-4">
+                <span class="px-2.5 py-1 bg-cream-200 text-brand-muted text-xs rounded-full capitalize whitespace-nowrap">
+                  {product.sale_type}
+                </span>
+              </td>
+              <td class="p-4">
+                <span class={`px-2.5 py-1 text-xs rounded-full whitespace-nowrap ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {product.is_active ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
+              <td class="p-4 text-right">
+                <a href={`/admin/productos/editar/${product.id}`} class="text-gold hover:text-gold-dark font-medium text-sm whitespace-nowrap">
+                  Editar
+                </a>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>

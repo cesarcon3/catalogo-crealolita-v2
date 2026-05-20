@@ -1,0 +1,147 @@
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import { getProductBySlug } from '@/features/products/services/publicProducts';
+import { OrderCalculator } from '@/features/products/components/OrderCalculator';
+import { ImageGallery } from '@/features/products/components/ImageGallery';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const product = await getProductBySlug(slug);
+
+if (!product) {
+  return Astro.redirect('/404');
+}
+
+const features: string[] = Array.isArray(product.features) ? (product.features as string[]) : [];
+const customizations: string[] = Array.isArray(product.customization_options) ? (product.customization_options as string[]) : [];
+
+const primaryImage = product.images.find(i => i.is_primary)?.url || product.images[0]?.url;
+
+const layoutProps = {
+  title: product.name,
+  ...(product.description ? { description: product.description } : {}),
+  ...(primaryImage ? { image: primaryImage } : {})
+};
+---
+
+<BaseLayout {...layoutProps}>
+  
+  <script type="application/ld+json" nonce={Astro.locals.cspNonce} set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description || "Diseño en MDF",
+    "image": product.images.map(i => i.url).filter(Boolean),
+    "offers": {
+      "@type": "Offer",
+      "price": product.price,
+      "priceCurrency": product.currency || "USD",
+      "availability": product.is_active ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+    }
+  })} />
+
+  <nav aria-label="Breadcrumb" class="mb-8">
+    <ol class="flex items-center flex-wrap gap-2 text-sm text-brand-muted">
+      <li>
+        <a href="/" class="hover:text-gold transition-colors flex items-center gap-1">
+          <span>🏠</span> Inicio
+        </a>
+      </li>
+      <li><span class="text-brand-border">/</span></li>
+      
+      {product.categories && (
+        <>
+          <li>
+            <a href={`/categoria/${product.categories.slug}`} class="hover:text-gold transition-colors">
+              {product.categories.name}
+            </a>
+          </li>
+          <li><span class="text-brand-border">/</span></li>
+        </>
+      )}
+      
+      <li class="font-semibold text-brand-text truncate max-w-[200px] sm:max-w-md" aria-current="page" title={product.name}>
+        {product.name}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+    
+    <ImageGallery client:load images={product.images} productName={product.name} />
+
+    <div class="flex flex-col">
+      {product.categories && (
+        <span class="text-sm font-bold text-gold-dark tracking-wider uppercase mb-2">
+          {product.categories.name}
+        </span>
+      )}
+      
+      <h1 class="text-4xl font-bold font-serif text-brand-text mb-4 leading-tight">
+        {product.name}
+      </h1>
+      
+      <p class="text-lg text-brand-muted mb-8 leading-relaxed">
+        {product.description}
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-brand-border">
+        {features.length > 0 && (
+          <div>
+            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
+              📋 Características
+            </h3>
+            <ul class="space-y-2">
+              {features.map(feature => (
+                <li class="flex items-start text-brand-muted">
+                  <span class="text-gold mr-2 mt-0.5">✓</span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {customizations.length > 0 && (
+          <div>
+            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
+              ✨ Personalización
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              {customizations.map(custom => (
+                <span class="bg-cream-200 text-brand-text border border-brand-border text-sm px-3 py-1 rounded-full">
+                  {custom}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div class="mb-8">
+        {product.production_time && (
+          <p class="text-sm text-brand-muted flex items-center gap-2">
+            <span class="text-xl">⏱️</span> 
+            <strong>Tiempo de producción:</strong> {product.production_time}
+          </p>
+        )}
+      </div>
+
+      <div class="mt-auto">
+        <OrderCalculator 
+          client:visible
+          productName={product.name}
+          productSlug={product.slug}
+          price={product.price}
+          currency={product.currency || 'USD'}
+          saleType={product.sale_type || 'docena'}
+        />
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>

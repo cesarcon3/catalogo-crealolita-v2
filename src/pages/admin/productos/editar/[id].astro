@@ -1,0 +1,74 @@
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { ProductForm, type InitialProductData } from '@/features/admin/components/ProductForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category, SaleType } from '@/core/types/database';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/admin/productos');
+}
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// 1. Obtener categorías
+const { data: catData } = await supabase.from('categories').select('*').order('name');
+const categories = (catData as Category[]) || [];
+
+// 2. Obtener datos del producto con sus imágenes
+const { data: productData, error } = await supabase
+  .from('products')
+  .select(`
+    *,
+    product_images (id, storage_path, is_primary, display_order)
+  `)
+  .eq('id', id)
+  .single();
+
+if (error || !productData) {
+  return Astro.redirect('/admin/productos');
+}
+
+// 3. Obtener URLs públicas de las imágenes
+const existingImages = (productData.product_images || [])
+  .sort((a: any, b: any) => a.display_order - b.display_order)
+  .map((img: any) => {
+    const { data } = supabase.storage.from('product-images').getPublicUrl(img.storage_path);
+    return {
+      id: img.id,
+      path: img.storage_path,
+      url: data.publicUrl,
+      is_primary: img.is_primary
+    };
+  });
+
+// 4. Formatear datos para la isla
+const initialData: InitialProductData = {
+  id: productData.id,
+  name: productData.name,
+  slug: productData.slug,
+  description: productData.description || '',
+  price: productData.price.toString(),
+  categoryId: productData.category_id || '',
+  saleType: productData.sale_type as SaleType,
+  productionTime: productData.production_time || '',
+  isActive: productData.is_active,
+  isFeatured: productData.is_featured,
+  features: Array.isArray(productData.features) ? productData.features : [],
+  customizations: Array.isArray(productData.customization_options) ? productData.customization_options : [],
+  existingImages
+};
+---
+
+<AdminLayout title="Editar Producto">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/productos" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Editar Producto</h1>
+    <p class="text-brand-muted mt-1">Actualiza los datos, gestiona imágenes o elimina el registro.</p>
+  </div>
+
+  <ProductForm categories={categories} initialData={initialData} client:load />
+</AdminLayout>

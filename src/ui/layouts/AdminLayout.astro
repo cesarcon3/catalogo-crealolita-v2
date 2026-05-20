@@ -1,0 +1,104 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { SITE_CONFIG } from '@/core/constants/site';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const pageTitle = `${title} | Admin - ${SITE_CONFIG.name}`;
+const userEmail = Astro.locals.userEmail;
+const currentPath = Astro.url.pathname;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pageTitle}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <ClientRouter />
+  </head>
+  <body class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-cream-100 text-brand-text selection:bg-gold selection:text-white">
+    
+    <div class="md:hidden flex items-center justify-between bg-white p-4 border-b border-brand-border z-20">
+      <div class="flex items-center gap-3">
+        <img src="/logo.webp" alt="Logo" class="h-6 w-auto drop-shadow-sm" />
+        <span class="text-[10px] font-bold text-gold-dark tracking-widest uppercase">Admin</span>
+      </div>
+      <button id="mobile-menu-btn" class="text-brand-text p-2 focus:outline-none" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-sidebar">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+    </div>
+
+    <aside id="mobile-sidebar" class="w-64 flex-shrink-0 h-full bg-white border-r border-brand-border flex-col hidden md:flex absolute md:relative z-10 shadow-xl md:shadow-sm transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+      
+      <div class="p-6 border-b border-brand-border flex flex-col items-center text-center">
+        <a href="/admin" class="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
+          <img src="/logo.webp" alt="Logo Creaciones Lolita" class="h-10 w-auto drop-shadow-sm" />
+          <span class="sr-only">Admin Creaciones Lolita</span>
+          <span class="text-[11px] font-bold text-gold-dark tracking-[0.2em] uppercase">Panel de Control</span>
+        </a>
+      </div>
+      
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+        <a href="/admin" class={`block px-4 py-2 rounded-lg transition-colors ${currentPath === '/admin' ? 'bg-gold text-white font-semibold' : 'hover:bg-cream-200'}`} aria-current={currentPath === '/admin' ? 'page' : undefined}>Dashboard</a>
+        <a href="/admin/productos" class={`block px-4 py-2 rounded-lg transition-colors ${currentPath.startsWith('/admin/productos') ? 'bg-gold text-white font-semibold' : 'hover:bg-cream-200'}`} aria-current={currentPath.startsWith('/admin/productos') ? 'page' : undefined}>Productos</a>
+        <a href="/admin/categorias" class={`block px-4 py-2 rounded-lg transition-colors ${currentPath.startsWith('/admin/categorias') ? 'bg-gold text-white font-semibold' : 'hover:bg-cream-200'}`} aria-current={currentPath.startsWith('/admin/categorias') ? 'page' : undefined}>Categorías</a>
+      </nav>
+
+      <div class="p-4 border-t border-brand-border mt-auto">
+        <p class="text-sm text-brand-muted mb-4 truncate" title={userEmail}>{userEmail}</p>
+        <form method="POST" action="/api/auth/logout">
+          <button type="submit" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
+            Cerrar Sesión
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
+
+    <main class="flex-1 h-full overflow-y-auto relative w-full">
+      <div class="p-4 md:p-8 max-w-7xl mx-auto">
+        <slot />
+      </div>
+    </main>
+
+    <script>
+      function initMobileMenu() {
+        const btn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('mobile-sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+
+        if (!btn || !sidebar || !overlay) return;
+
+        const newBtn = btn.cloneNode(true) as HTMLButtonElement;
+        btn.parentNode?.replaceChild(newBtn, btn);
+        
+        const toggleMenu = () => {
+          const isClosed = sidebar.classList.contains('-translate-x-full');
+          if (isClosed) {
+            sidebar.classList.remove('hidden', '-translate-x-full');
+            overlay.classList.remove('hidden');
+            newBtn.setAttribute('aria-expanded', 'true');
+          } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            newBtn.setAttribute('aria-expanded', 'false');
+            setTimeout(() => sidebar.classList.add('hidden'), 300);
+          }
+        };
+
+        newBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+      }
+
+      document.addEventListener('astro:page-load', initMobileMenu);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import ProductCard from '@/features/products/components/ProductCard.astro';
+import { getCategories, getProductsByCategory } from '@/features/products/services/publicProducts';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const categories = await getCategories();
+const currentCategory = categories.find(c => c.slug === slug);
+
+if (!currentCategory) {
+  return Astro.redirect('/404');
+}
+
+const products = await getProductsByCategory(slug);
+
+const layoutProps = {
+  title: currentCategory.name,
+  ...(currentCategory.description ? { description: currentCategory.description } : {})
+};
+---
+
+<BaseLayout {...layoutProps}>
+  
+  <section class="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[200px] md:min-h-[230px] text-center px-6 py-6 bg-gradient-to-br from-gold to-gold-dark rounded-3xl text-white mb-10 shadow-lg relative overflow-hidden">
+    <div class="relative z-10 w-full">
+      <span class="inline-block bg-white/20 text-white border border-white/30 px-4 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase mb-3 shadow-sm">
+        Colección Exclusiva
+      </span>
+      
+      <h1 class="text-2xl md:text-4xl font-bold mb-2 font-serif tracking-wide drop-shadow-sm">
+        {currentCategory.name}
+      </h1>
+      
+      <p class="text-sm md:text-base max-w-2xl mx-auto italic text-cream-100 leading-relaxed">
+        {currentCategory.description || 'Explora nuestra selección de diseños exclusivos y personalizados.'}
+      </p>
+
+      <div class="mt-4 pt-3 border-t border-white/20 max-w-xs mx-auto">
+        <p class="text-[10px] md:text-xs text-cream-100 font-medium uppercase tracking-wider">
+          {products.length} {products.length === 1 ? 'diseño disponible' : 'diseños disponibles'}
+        </p>
+      </div>
+    </div>
+    
+    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 bg-white opacity-10 rounded-full blur-2xl"></div>
+  </section>
+
+  <section class="mb-10">
+    <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+      <a href="/" class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark transition-all shadow-sm">
+        Todos
+      </a>
+      {categories.map(cat => (
+        <a 
+          href={`/categoria/${cat.slug}`} 
+          class={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all shadow-sm ${
+            cat.slug === slug 
+              ? 'border-gold bg-gold text-white' 
+              : 'border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark'
+          }`}
+        >
+          {cat.name}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {products.length > 0 ? (
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          Diseños Disponibles
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </section>
+  ) : (
+    <div class="text-center py-16 bg-cream-100 rounded-2xl border border-brand-border mb-16 shadow-sm">
+      <span class="text-4xl mb-3 block">🛠️</span>
+      <h3 class="text-xl font-bold text-brand-text mb-2">Próximamente</h3>
+      <p class="text-brand-muted text-sm">Aún estamos preparando diseños para esta categoría.</p>
+    </div>
+  )}
+
+</BaseLayout>

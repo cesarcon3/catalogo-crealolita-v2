@@ -1,0 +1,43 @@
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import LoginForm from '@/features/admin/components/LoginForm.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+let errorMessage = '';
+let lastEmail = '';
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const email = formData.get('email')?.toString();
+  const password = formData.get('password')?.toString();
+
+  if (email) lastEmail = email;
+
+  if (email && password) {
+    const supabase = createSupabaseServerClient(Astro.cookies);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      // FIX CRÍTICO-5: Mitigación de Fuerza Bruta y Rate Limiting
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Retraso artificial anti-bots
+      
+      if (error.status === 429) {
+        errorMessage = 'Demasiados intentos fallidos. Por seguridad, espera unos minutos.';
+      } else {
+        errorMessage = 'Credenciales inválidas. Intenta de nuevo.';
+      }
+    } else {
+      return Astro.redirect('/admin');
+    }
+  } else {
+    errorMessage = 'Por favor, completa todos los campos.';
+  }
+}
+---
+
+<BaseLayout title="Acceso Administrativo">
+  <LoginForm errorMessage={errorMessage} defaultEmail={lastEmail} />
+</BaseLayout>

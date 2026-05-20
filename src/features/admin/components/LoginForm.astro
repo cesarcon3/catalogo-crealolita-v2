@@ -1,0 +1,52 @@
+---
+import Button from '@/ui/components/Button.astro';
+
+interface Props {
+  errorMessage?: string;
+  defaultEmail?: string;
+}
+
+const { errorMessage = '', defaultEmail = '' } = Astro.props;
+---
+
+<div class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-sm border border-brand-border">
+  <div class="text-center mb-8">
+    <h1 class="text-2xl font-bold text-gold-dark">Creaciones Lolita</h1>
+    <p class="text-brand-muted mt-2">Panel Administrativo</p>
+  </div>
+
+  {errorMessage && (
+    <div class="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center">
+      {errorMessage}
+    </div>
+  )}
+
+  <form method="POST" class="space-y-6">
+    <div>
+      <label for="email" class="block text-sm font-medium text-brand-text mb-1">Correo Electrónico</label>
+      <input 
+        type="email" 
+        id="email" 
+        name="email" 
+        required 
+        value={defaultEmail}
+        class="w-full px-4 py-2 border border-brand-border rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none transition-all bg-cream-100"
+        placeholder="admin@creacioneslolita.com"
+      />
+    </div>
+
+    <div>
+      <label for="password" class="block text-sm font-medium text-brand-text mb-1">Contraseña</label>
+      <input 
+        type="password" 
+        id="password" 
+        name="password" 
+        required 
+        class="w-full px-4 py-2 border border-brand-border rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none transition-all bg-cream-100"
+        placeholder="••••••••"
+      />
+    </div>
+
+    <Button type="submit" variant="primary" fullWidth>Ingresar al Sistema</Button>
+  </form>
+</div>

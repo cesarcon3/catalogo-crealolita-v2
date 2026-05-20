@@ -1,0 +1,24 @@
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { CategoryForm } from '@/features/admin/components/CategoryForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/admin/categorias');
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+const { data: categoryData, error } = await supabase.from('categories').select('*').eq('id', id).single();
+
+if (error || !categoryData) return Astro.redirect('/admin/categorias');
+---
+
+<AdminLayout title="Editar Categoría">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/categorias" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Editar Categoría</h1>
+  </div>
+  <CategoryForm initialData={categoryData as Category} client:load />
+</AdminLayout>

@@ -1,0 +1,110 @@
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import Button from '@/ui/components/Button.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// Consultamos las métricas en paralelo para no penalizar el tiempo de carga
+const [
+  { count: totalProducts },
+  { count: activeProducts },
+  { count: totalCategories }
+] = await Promise.all([
+  supabase.from('products').select('*', { count: 'exact', head: true }),
+  supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+  supabase.from('categories').select('*', { count: 'exact', head: true })
+]);
+
+const inactiveProducts = (totalProducts || 0) - (activeProducts || 0);
+---
+
+<AdminLayout title="Dashboard">
+  <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-brand-border pb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gold-dark">Panel de Control</h1>
+      <p class="text-brand-muted mt-1">Resumen general del catálogo y accesos rápidos.</p>
+    </div>
+    <div class="flex gap-3">
+      <Button href="/admin/productos/nuevo" variant="primary" size="sm">
+        + Nuevo Producto
+      </Button>
+      <Button href="/" variant="outline" size="sm" target="_blank">
+        Ver Tienda Pública ↗
+      </Button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-gold-light/20 flex items-center justify-center text-gold-dark text-2xl">
+        📦
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Total Productos</p>
+        <p class="text-3xl font-bold text-brand-text">{totalProducts || 0}</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-2xl">
+        ✨
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Activos</p>
+        <p class="text-3xl font-bold text-brand-text">{activeProducts || 0}</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-red-500 text-2xl">
+        ⏸️
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Borradores / Inactivos</p>
+        <p class="text-3xl font-bold text-brand-text">{inactiveProducts}</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-2xl">
+        🏷️
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Categorías</p>
+        <p class="text-3xl font-bold text-brand-text">{totalCategories || 0}</p>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="text-xl font-bold text-brand-text mb-4">Gestión Rápida</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <div class="bg-white p-8 rounded-2xl shadow-sm border border-brand-border hover:border-gold transition-colors group">
+      <h3 class="text-xl font-bold text-gold-dark mb-3 flex items-center gap-2">
+        <span>📋</span> Inventario y Precios
+      </h3>
+      <p class="text-brand-muted mb-6 leading-relaxed">
+        Administra tu catálogo de corte láser. Actualiza precios, sube nuevas fotografías, modifica descripciones y configura modalidades de venta (unidad o docena).
+      </p>
+      <Button href="/admin/productos" variant="secondary" fullWidth class="group-hover:bg-gold group-hover:text-white">
+        Gestionar Productos →
+      </Button>
+    </div>
+
+    <div class="bg-white p-8 rounded-2xl shadow-sm border border-brand-border hover:border-gold transition-colors group">
+      <h3 class="text-xl font-bold text-gold-dark mb-3 flex items-center gap-2">
+        <span>🗂️</span> Taxonomía del Catálogo
+      </h3>
+      <p class="text-brand-muted mb-6 leading-relaxed">
+        Organiza tus productos en eventos o líneas de negocio. Crea, edita o elimina las categorías (15 Años, Bautizos, Bodas, etc.) para facilitar la navegación a tus clientes.
+      </p>
+      <Button href="/admin/categorias" variant="secondary" fullWidth class="group-hover:bg-gold group-hover:text-white">
+        Gestionar Categorías →
+      </Button>
+    </div>
+
+  </div>
+</AdminLayout>

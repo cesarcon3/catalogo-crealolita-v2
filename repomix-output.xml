@@ -1,0 +1,3656 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+public/
+  favicon.ico
+  google8f434cf49d5020d0.html
+  logo.webp
+  robots.txt
+  social-cover.jpg
+src/
+  core/
+    constants/
+      site.ts
+    types/
+      database.ts
+    utils/
+      slug.ts
+  features/
+    admin/
+      components/
+        CategoryForm.tsx
+        DynamicListInput.tsx
+        ImageUploader.tsx
+        LoginForm.astro
+        ProductForm.tsx
+        ProductList.astro
+    products/
+      components/
+        ImageGallery.tsx
+        OrderCalculator.tsx
+        ProductCard.astro
+      services/
+        publicProducts.ts
+  lib/
+    supabase-server.ts
+    supabase.ts
+  pages/
+    admin/
+      categorias/
+        editar/
+          [id].astro
+        index.astro
+        nuevo.astro
+      productos/
+        editar/
+          [id].astro
+        index.astro
+        nuevo.astro
+      index.astro
+      login.astro
+    api/
+      auth/
+        logout.ts
+      categories/
+        [id].ts
+        index.ts
+      products/
+        [id].ts
+        index.ts
+    categoria/
+      [slug].astro
+    producto/
+      [slug].astro
+    index.astro
+    sitemap.xml.ts
+  styles/
+    global.css
+  ui/
+    components/
+      Button.astro
+      Button.tsx
+      ConfirmModal.tsx
+    layouts/
+      AdminLayout.astro
+      BaseLayout.astro
+    utils/
+      buttonClasses.ts
+  env.d.ts
+  middleware.ts
+.gitignore
+astro.config.mjs
+package.json
+README.md
+tsconfig.json
+wrangler.prod.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="public/google8f434cf49d5020d0.html">
+google-site-verification: google8f434cf49d5020d0.html
+</file>
+
+<file path="public/robots.txt">
+User-agent: *
+Allow: /
+
+# Evitamos que Google indexe el panel administrativo privado
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://creacioneslolita.com/sitemap.xml
+</file>
+
+<file path="src/core/constants/site.ts">
+export const SITE_CONFIG = {
+  name: 'Creaciones Lolita',
+  description: 'Especialistas en productos personalizados en MDF con corte y grabado láser en Venezuela.',
+  url: 'https://creacioneslolita.com',
+  contact: {
+    whatsapp: '584161452966',
+    defaultMessage: 'Hola, me gustaría obtener información acerca de',
+  },
+  social: {
+    instagram: 'https://www.instagram.com/crealolita/',
+    facebook: 'https://www.facebook.com/people/Crealolita-Diseños-Personalizados-Regalos-Creativos/61578079074035/',
+  },
+} as const;
+</file>
+
+<file path="src/core/types/database.ts">
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      product_images: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_primary: boolean | null
+          product_id: string | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_tags: {
+        Row: {
+          product_id: string
+          tag_id: string
+        }
+        Insert: {
+          product_id: string
+          tag_id: string
+        }
+        Update: {
+          product_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          currency: string | null
+          customization_options: Json | null
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          name: string
+          price: number
+          production_time: string | null
+          sale_type: Database["public"]["Enums"]["sale_type_enum"] | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customization_options?: Json | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          name: string
+          price: number
+          production_time?: string | null
+          sale_type?: Database["public"]["Enums"]["sale_type_enum"] | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customization_options?: Json | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          name?: string
+          price?: number
+          production_time?: string | null
+          sale_type?: Database["public"]["Enums"]["sale_type_enum"] | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      sale_type_enum: "unidad" | "docena" | "mixto"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      sale_type_enum: ["unidad", "docena", "mixto"],
+    },
+  },
+} as const
+
+// --- ALIAS DE EXPORTACIÓN (Solución al error 2305) ---
+export type Category = Tables<'categories'>;
+export type Product = Tables<'products'>;
+export type ProductImage = Tables<'product_images'>;
+export type SaleType = Enums<'sale_type_enum'>;
+</file>
+
+<file path="src/core/utils/slug.ts">
+export const generateSlug = (text: string): string => {
+  return text
+    .normalize('NFD')                         // Separa las letras de sus acentos
+    .replace(/[\u0300-\u036f]/g, '')          // Elimina los acentos separados
+    .replace(/ñ/gi, 'n')                      // Convierte la 'ñ' en 'n'
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')                 // Elimina caracteres especiales restantes
+    .replace(/[\s_-]+/g, '-')                 // Reemplaza espacios por guiones
+    .replace(/^-+|-+$/g, '');                 // Limpia guiones al inicio o final
+};
+</file>
+
+<file path="src/features/admin/components/CategoryForm.tsx">
+import React, { useState, type ChangeEvent, type FormEvent } from 'react';
+import type { Category } from '@/core/types/database';
+import { Button } from '@/ui/components/Button';
+import { navigate } from 'astro:transitions/client';
+import { generateSlug } from '@/core/utils/slug';
+import { ConfirmModal } from '@/ui/components/ConfirmModal';
+
+interface CategoryFormProps {
+  initialData?: Category;
+}
+
+export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
+  const isEdit = !!initialData;
+  const [name, setName] = useState<string>(initialData?.name || '');
+  const [slug, setSlug] = useState<string>(initialData?.slug || '');
+  const [description, setDescription] = useState<string>(initialData?.description || '');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setName(value);
+    if (!isEdit) {
+      setSlug(generateSlug(value));
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!initialData) return;
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`/api/categories/${initialData.id}`, { method: 'DELETE' });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Ocurrió un error al intentar eliminar la categoría.');
+      }
+      
+      navigate('/admin/categorias');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error de conexión con el servidor.');
+      setLoading(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const url = isEdit ? `/api/categories/${initialData.id}` : '/api/categories';
+      const method = isEdit ? 'PUT' : 'POST';
+      const payload = { name, slug, description };
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Error al guardar los datos.');
+      
+      navigate('/admin/categorias');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl border border-brand-border shadow-sm relative">
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium text-center border border-red-100">
+          {error}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label htmlFor="category-name" className="block text-sm font-semibold text-brand-text mb-2">Nombre *</label>
+          <input 
+            id="category-name"
+            type="text" 
+            required 
+            value={name} 
+            onChange={handleNameChange} 
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold" 
+            placeholder="Ej. Bodas" 
+          />
+        </div>
+        <div>
+          <label htmlFor="category-slug" className="block text-sm font-semibold text-brand-text mb-2">URL Slug *</label>
+          <input 
+            id="category-slug"
+            type="text" 
+            required 
+            value={slug} 
+            onChange={(e) => setSlug(e.target.value)} 
+            disabled={isEdit} 
+            className={`w-full px-4 py-2 border border-brand-border rounded-lg outline-none font-mono text-sm ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-cream-200 text-brand-muted'}`} 
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="category-desc" className="block text-sm font-semibold text-brand-text mb-2">Descripción</label>
+        <textarea 
+          id="category-desc"
+          rows={3} 
+          value={description} 
+          onChange={(e) => setDescription(e.target.value)} 
+          className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold" 
+          placeholder="Descripción breve de la categoría..." 
+        />
+      </div>
+
+      <div className="pt-4 flex justify-between gap-4 border-t border-brand-border mt-6">
+        <div>
+          {isEdit && (
+            <Button type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} disabled={loading}>
+              Borrar Categoría
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-4">
+          <Button href="/admin/categorias" variant="neutral">Cancelar</Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear')}
+          </Button>
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={isDeleteModalOpen}
+        title="Eliminar Categoría"
+        message="¿Estás seguro de que deseas eliminar esta categoría? Si la categoría tiene productos vinculados, la acción será bloqueada por seguridad."
+        onConfirm={confirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={loading}
+      />
+    </form>
+  );
+};
+</file>
+
+<file path="src/features/admin/components/DynamicListInput.tsx">
+import React, { useState } from 'react';
+import { Button } from '@/ui/components/Button';
+
+interface DynamicListInputProps {
+  label: string;
+  items: string[];
+  onAdd: (item: string) => void;
+  onRemove: (index: number) => void;
+  placeholder?: string;
+}
+
+export const DynamicListInput: React.FC<DynamicListInputProps> = ({ 
+  label, 
+  items, 
+  onAdd, 
+  onRemove,
+  placeholder = ''
+}) => {
+  const [currentValue, setCurrentValue] = useState('');
+
+  const handleAdd = () => {
+    if (currentValue.trim()) {
+      onAdd(currentValue.trim());
+      setCurrentValue('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-brand-text mb-2">{label}</label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={currentValue}
+          onChange={(e) => setCurrentValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="flex-1 px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+        />
+        <Button type="button" onClick={handleAdd} variant="primary" className="!px-4">
+          +
+        </Button>
+      </div>
+      
+      {items.length > 0 && (
+        <ul className="mt-3 space-y-1.5">
+          {items.map((item, index) => (
+            <li key={index} className="flex justify-between items-center bg-cream-100 px-3 py-1.5 rounded-lg text-sm text-brand-text border border-brand-border">
+              <span>{item}</span>
+              <button 
+                type="button" 
+                onClick={() => onRemove(index)} 
+                className="text-red-500 font-bold hover:text-red-700 px-2"
+                title="Eliminar elemento"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+</file>
+
+<file path="src/features/admin/components/ImageUploader.tsx">
+import React, { type ChangeEvent } from 'react';
+import type { ExistingImage } from './ProductForm';
+
+interface ImageUploaderProps {
+  existingImages: ExistingImage[];
+  onRemoveExisting: (path: string) => void;
+  previewUrls: string[];
+  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onRemoveNewFile: (index: number) => void;
+}
+
+export const ImageUploader: React.FC<ImageUploaderProps> = ({
+  existingImages,
+  onRemoveExisting,
+  previewUrls,
+  onFileChange,
+  onRemoveNewFile
+}) => {
+  return (
+    <div className="p-6 bg-cream-100 rounded-xl border-2 border-dashed border-gold-light">
+      <label className="block text-lg font-bold text-gold-dark mb-4">Fotografías del Producto</label>
+      
+      {existingImages.length > 0 && (
+        <div className="mb-6">
+          <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes actuales:</span>
+          <div className="flex gap-4 overflow-x-auto py-2">
+            {existingImages.map((img) => (
+              <div key={img.id} className="relative w-32 h-32 flex-shrink-0 group">
+                <img src={img.url} alt="Existente" className="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm" />
+                <button
+                  type="button"
+                  onClick={() => onRemoveExisting(img.path)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  title="Eliminar imagen actual"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={onFileChange}
+        className="w-full text-sm text-brand-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold file:text-white hover:file:bg-gold-dark transition-colors cursor-pointer"
+      />
+      
+      {previewUrls.length > 0 && (
+        <div className="mt-6 border-t border-brand-border pt-4">
+          <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes nuevas a subir:</span>
+          <div className="flex gap-4 overflow-x-auto py-2">
+            {previewUrls.map((url, idx) => (
+              <div key={idx} className="relative w-32 h-32 flex-shrink-0 group">
+                <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover rounded-lg border-2 border-green-400 shadow-sm" />
+                <button
+                  type="button"
+                  onClick={() => onRemoveNewFile(idx)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+</file>
+
+<file path="src/features/admin/components/LoginForm.astro">
+---
+import Button from '@/ui/components/Button.astro';
+
+interface Props {
+  errorMessage?: string;
+  defaultEmail?: string;
+}
+
+const { errorMessage = '', defaultEmail = '' } = Astro.props;
+---
+
+<div class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-sm border border-brand-border">
+  <div class="text-center mb-8">
+    <h1 class="text-2xl font-bold text-gold-dark">Creaciones Lolita</h1>
+    <p class="text-brand-muted mt-2">Panel Administrativo</p>
+  </div>
+
+  {errorMessage && (
+    <div class="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center">
+      {errorMessage}
+    </div>
+  )}
+
+  <form method="POST" class="space-y-6">
+    <div>
+      <label for="email" class="block text-sm font-medium text-brand-text mb-1">Correo Electrónico</label>
+      <input 
+        type="email" 
+        id="email" 
+        name="email" 
+        required 
+        value={defaultEmail}
+        class="w-full px-4 py-2 border border-brand-border rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none transition-all bg-cream-100"
+        placeholder="admin@creacioneslolita.com"
+      />
+    </div>
+
+    <div>
+      <label for="password" class="block text-sm font-medium text-brand-text mb-1">Contraseña</label>
+      <input 
+        type="password" 
+        id="password" 
+        name="password" 
+        required 
+        class="w-full px-4 py-2 border border-brand-border rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none transition-all bg-cream-100"
+        placeholder="••••••••"
+      />
+    </div>
+
+    <Button type="submit" variant="primary" fullWidth>Ingresar al Sistema</Button>
+  </form>
+</div>
+</file>
+
+<file path="src/features/admin/components/ProductForm.tsx">
+import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import type { Category, SaleType } from '@/core/types/database';
+import { Button } from '@/ui/components/Button';
+import { DynamicListInput } from './DynamicListInput';
+import { ImageUploader } from './ImageUploader';
+import { navigate } from 'astro:transitions/client';
+import { generateSlug } from '@/core/utils/slug';
+import { ConfirmModal } from '@/ui/components/ConfirmModal';
+
+export interface ExistingImage {
+  id: string;
+  url: string;
+  path: string;
+  is_primary: boolean;
+}
+
+export interface InitialProductData {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: string;
+  categoryId: string;
+  saleType: SaleType;
+  productionTime: string;
+  isActive: boolean;
+  isFeatured: boolean;
+  features: string[];
+  customizations: string[];
+  existingImages: ExistingImage[];
+}
+
+interface ProductFormProps {
+  categories: Category[];
+  initialData?: InitialProductData;
+}
+
+export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) => {
+  const isEdit = !!initialData;
+
+  const [name, setName] = useState<string>(initialData?.name || '');
+  const [slug, setSlug] = useState<string>(initialData?.slug || '');
+  const [description, setDescription] = useState<string>(initialData?.description || '');
+  const [price, setPrice] = useState<string>(initialData?.price || '');
+  const [categoryId, setCategoryId] = useState<string>(initialData?.categoryId || '');
+  const [saleType, setSaleType] = useState<SaleType>(initialData?.saleType || 'docena');
+  const [productionTime, setProductionTime] = useState<string>(initialData?.productionTime || '');
+  const [isActive, setIsActive] = useState<boolean>(initialData?.isActive ?? true);
+  const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
+
+  const [features, setFeatures] = useState<string[]>(initialData?.features || []);
+  const [customizations, setCustomizations] = useState<string[]>(initialData?.customizations || []);
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>(initialData?.existingImages || []);
+  const [deletedExistingImagePaths, setDeletedExistingImagePaths] = useState<string[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setName(value);
+    if (!isEdit) {
+      setSlug(generateSlug(value));
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...filesArray]);
+      const newPreviews = filesArray.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeNewFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => {
+      const newUrls = [...prev];
+      if (newUrls[index]) URL.revokeObjectURL(newUrls[index]);
+      newUrls.splice(index, 1);
+      return newUrls;
+    });
+  };
+
+  const removeExistingImage = (path: string) => {
+    setExistingImages(prev => prev.filter(img => img.path !== path));
+    setDeletedExistingImagePaths(prev => [...prev, path]);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!initialData) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/products/${initialData.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Error al eliminar');
+      navigate('/admin/productos');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar el producto');
+      setLoading(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('slug', slug);
+    formData.append('description', description);
+    formData.append('price', price);
+    if (categoryId) formData.append('category_id', categoryId);
+    formData.append('sale_type', saleType);
+    formData.append('production_time', productionTime);
+    formData.append('is_active', String(isActive));
+    formData.append('is_featured', String(isFeatured));
+    formData.append('features', JSON.stringify(features));
+    formData.append('customization_options', JSON.stringify(customizations));
+
+    if (isEdit && deletedExistingImagePaths.length > 0) {
+      formData.append('deleted_images', JSON.stringify(deletedExistingImagePaths));
+    }
+
+    selectedFiles.forEach(file => formData.append('images', file));
+
+    try {
+      const url = isEdit ? `/api/products/${initialData.id}` : '/api/products';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(url, { method, body: formData });
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.error || 'Error al guardar');
+      
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      navigate('/admin/productos');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl border border-brand-border shadow-sm">
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium text-center">
+          {error}
+        </div>
+      )}
+
+      <ImageUploader 
+        existingImages={existingImages}
+        onRemoveExisting={removeExistingImage}
+        previewUrls={previewUrls}
+        onFileChange={handleFileChange}
+        onRemoveNewFile={removeNewFile}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label htmlFor="product-name" className="block text-sm font-semibold text-brand-text mb-2">Nombre del Producto *</label>
+          <input
+            id="product-name"
+            type="text"
+            required
+            value={name}
+            onChange={handleNameChange}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="product-slug" className="block text-sm font-semibold text-brand-text mb-2">URL Slug *</label>
+          <input
+            id="product-slug"
+            type="text"
+            required
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            disabled={isEdit}
+            className={`w-full px-4 py-2 border border-brand-border rounded-lg outline-none font-mono text-sm ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-cream-200 text-brand-muted'}`}
+            title={isEdit ? "No se puede editar el slug" : ""}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="product-description" className="block text-sm font-semibold text-brand-text mb-2">Descripción</label>
+        <textarea
+          id="product-description"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label htmlFor="product-price" className="block text-sm font-semibold text-brand-text mb-2">Precio base (USD) *</label>
+          <input
+            id="product-price"
+            type="number"
+            step="0.01"
+            required
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="product-category" className="block text-sm font-semibold text-brand-text mb-2">Categoría</label>
+          <select
+            id="product-category"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          >
+            <option value="">Selecciona...</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="product-saletype" className="block text-sm font-semibold text-brand-text mb-2">Modalidad de Venta</label>
+          <select
+            id="product-saletype"
+            value={saleType}
+            onChange={(e) => setSaleType(e.target.value as SaleType)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          >
+            <option value="docena">Solo por Docena</option>
+            <option value="unidad">Solo por Unidad</option>
+            <option value="mixto">Mixto (Docena y Unidad)</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <DynamicListInput 
+          label="Características"
+          placeholder="Ej. MDF de alta calidad 3mm"
+          items={features}
+          onAdd={(item) => setFeatures([...features, item])}
+          onRemove={(idx) => setFeatures(features.filter((_, i) => i !== idx))}
+        />
+
+        <DynamicListInput 
+          label="Personalización"
+          placeholder="Ej. Nombre de la Quinceañera"
+          items={customizations}
+          onAdd={(item) => setCustomizations([...customizations, item])}
+          onRemove={(idx) => setCustomizations(customizations.filter((_, i) => i !== idx))}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center pt-4 border-t border-brand-border">
+        <div>
+          <label htmlFor="product-production" className="block text-sm font-semibold text-brand-text mb-2">Tiempo estimado de producción</label>
+          <input
+            id="product-production"
+            type="text"
+            value={productionTime}
+            onChange={(e) => setProductionTime(e.target.value)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          />
+        </div>
+
+        <div className="flex items-center space-x-3 mt-6">
+          <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 accent-gold cursor-pointer" />
+          <label htmlFor="isActive" className="text-sm font-semibold text-brand-text cursor-pointer">Visible públicamente</label>
+        </div>
+
+        <div className="flex items-center space-x-3 mt-6">
+          <input type="checkbox" id="isFeatured" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-5 h-5 accent-gold cursor-pointer" />
+          <label htmlFor="isFeatured" className="text-sm font-semibold text-brand-text cursor-pointer">Destacar en Inicio (★)</label>
+        </div>
+      </div>
+
+      <div className="pt-4 flex justify-between gap-4 border-t border-brand-border mt-6">
+        <div>
+          {isEdit && (
+            <Button type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} disabled={loading}>
+              Borrar Producto
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-4">
+          <Button href="/admin/productos" variant="neutral">Cancelar</Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Guardando...' : (isEdit ? 'Actualizar Producto' : 'Crear Producto')}
+          </Button>
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={isDeleteModalOpen}
+        title="Eliminar Producto"
+        message="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer y borrará permanentemente sus imágenes asociadas."
+        onConfirm={confirmDeleteProduct}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={loading}
+      />
+    </form>
+  );
+};
+</file>
+
+<file path="src/features/admin/components/ProductList.astro">
+---
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Product } from '@/core/types/database';
+// FIX: Usamos el botón nativo de Astro para vistas estáticas
+import Button from '@/ui/components/Button.astro';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// FIX: Usamos Omit para evitar el choque de tipos con la interfaz original
+interface ProductListItem extends Omit<Product, 'categories'> {
+  categories: { name: string } | null;
+  product_images: { storage_path: string; is_primary: boolean }[];
+}
+
+// Consultamos productos haciendo un JOIN con categories y product_images
+const { data, error } = await supabase
+  .from('products')
+  .select(`
+    *, 
+    categories(name),
+    product_images(storage_path, is_primary)
+  `)
+  .order('created_at', { ascending: false });
+
+const rawProducts = (data as ProductListItem[]) || [];
+
+// Procesamos los datos para inyectar las URLs públicas de las miniaturas y el conteo
+const products = rawProducts.map((product) => {
+  const images = product.product_images || [];
+  const primaryImage = images.find((img) => img.is_primary) || images[0];
+  
+  let thumbnailUrl = null;
+  if (primaryImage) {
+    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(primaryImage.storage_path);
+    thumbnailUrl = urlData.publicUrl;
+  }
+
+  return {
+    ...product,
+    thumbnailUrl,
+    imageCount: images.length
+  };
+});
+---
+
+<div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+  <div class="p-6 border-b border-brand-border flex justify-between items-center bg-cream-100/50">
+    <div>
+      <h2 class="text-xl font-bold text-brand-text">Catálogo de Productos</h2>
+      <p class="text-sm text-brand-muted mt-1">Gestiona los artículos, precios, disponibilidad y fotografías.</p>
+    </div>
+    <Button href="/admin/productos/nuevo" variant="primary" size="sm">
+      + Nuevo Producto
+    </Button>
+  </div>
+
+  {error && (
+    <div class="p-4 bg-red-50 text-red-600 border-b border-red-100">
+      Error al cargar los productos: {error.message}
+    </div>
+  )}
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
+          <th class="p-4 font-medium w-16 text-center">Foto</th>
+          <th class="p-4 font-medium">Producto</th>
+          <th class="p-4 font-medium">Categoría</th>
+          <th class="p-4 font-medium">Precio</th>
+          <th class="p-4 font-medium">Tipo Venta</th>
+          <th class="p-4 font-medium">Estado</th>
+          <th class="p-4 font-medium text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-brand-border">
+        {products.length === 0 ? (
+          <tr>
+            <td colspan="7" class="p-8 text-center text-brand-muted italic">
+              No hay productos registrados aún.
+            </td>
+          </tr>
+        ) : (
+          products.map((product) => (
+            <tr class="hover:bg-cream-50 transition-colors">
+              
+              <td class="p-4">
+                {product.thumbnailUrl ? (
+                  <div class="relative w-12 h-12 flex-shrink-0">
+                    <img 
+                      src={product.thumbnailUrl} 
+                      alt={`Miniatura de ${product.name}`} 
+                      class="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm"
+                      loading="lazy"
+                    />
+                    {product.imageCount > 1 && (
+                      <span class="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white" title={`${product.imageCount} imágenes en total`}>
+                        {product.imageCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div class="w-12 h-12 rounded-lg bg-cream-200 border-2 border-brand-border border-dashed flex items-center justify-center text-brand-muted shadow-sm" title="Producto sin fotografías">
+                    <span class="text-lg opacity-50">📷</span>
+                  </div>
+                )}
+              </td>
+
+              <td class="p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <p class="font-semibold text-brand-text line-clamp-1" title={product.name}>{product.name}</p>
+                  {product.is_featured && (
+                    <span class="px-2 py-0.5 bg-pink-50 text-pink-600 border border-pink-200 text-[10px] font-bold rounded-full whitespace-nowrap shadow-sm" title="Destacado en la página de inicio">
+                      ⭐ Destacado
+                    </span>
+                  )}
+                </div>
+                <p class="text-xs text-brand-muted">{product.slug}</p>
+              </td>
+
+              <td class="p-4 text-sm text-brand-muted whitespace-nowrap">
+                {product.categories?.name || 'Sin categoría'}
+              </td>
+              <td class="p-4 font-medium whitespace-nowrap">
+                {product.currency} {product.price.toFixed(2)}
+              </td>
+              <td class="p-4">
+                <span class="px-2.5 py-1 bg-cream-200 text-brand-muted text-xs rounded-full capitalize whitespace-nowrap">
+                  {product.sale_type}
+                </span>
+              </td>
+              <td class="p-4">
+                <span class={`px-2.5 py-1 text-xs rounded-full whitespace-nowrap ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {product.is_active ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
+              <td class="p-4 text-right">
+                <a href={`/admin/productos/editar/${product.id}`} class="text-gold hover:text-gold-dark font-medium text-sm whitespace-nowrap">
+                  Editar
+                </a>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+</file>
+
+<file path="src/features/products/components/ImageGallery.tsx">
+import React, { useState } from 'react';
+
+interface ImageGalleryProps {
+  productName: string;
+  images: { url: string | null; is_primary: boolean }[];
+}
+
+export const ImageGallery: React.FC<ImageGalleryProps> = ({ productName, images }) => {
+  const validImages = images.filter(img => img.url !== null) as { url: string; is_primary: boolean }[];
+  
+  const [mainImage, setMainImage] = useState<string>(
+    validImages.find(i => i.is_primary)?.url || validImages[0]?.url || ''
+  );
+
+  if (validImages.length === 0) {
+    return (
+      <div className="aspect-square bg-cream-100 rounded-2xl flex items-center justify-center border border-brand-border">
+        <span className="text-brand-muted text-lg">Sin imágenes disponibles</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="aspect-square bg-cream-100 rounded-2xl overflow-hidden border border-brand-border shadow-sm">
+        <img 
+          src={mainImage} 
+          alt={productName}
+          width="800"
+          height="800"
+          decoding="sync"
+          fetchPriority="high"
+          className="w-full h-full object-cover transition-opacity duration-300"
+        />
+      </div>
+
+      {validImages.length > 1 && (
+        <div className="grid grid-cols-4 gap-4">
+          {validImages.map((img, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setMainImage(img.url)}
+              className={`aspect-square bg-cream-100 rounded-xl overflow-hidden border-2 transition-all focus:outline-none ${
+                mainImage === img.url 
+                  ? 'border-gold shadow-md scale-95 opacity-100' 
+                  : 'border-brand-border hover:border-gold-light opacity-70 hover:opacity-100'
+              }`}
+            >
+              <img 
+                src={img.url} 
+                alt={`Vista ${idx + 1}`} 
+                width="200"
+                height="200"
+                loading="lazy"
+                className="w-full h-full object-cover" 
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+</file>
+
+<file path="src/features/products/components/OrderCalculator.tsx">
+import React, { useState, useMemo } from 'react';
+import { SITE_CONFIG } from '@/core/constants/site';
+import type { SaleType } from '@/core/types/database';
+
+interface OrderCalculatorProps {
+  productName: string;
+  productSlug: string;
+  price: number;
+  currency: string;
+  saleType: SaleType;
+}
+
+export const OrderCalculator: React.FC<OrderCalculatorProps> = ({
+  productName,
+  productSlug,
+  price,
+  currency,
+  saleType
+}) => {
+  const [selectedType, setSelectedType] = useState<'unidad' | 'docena'>(
+    saleType === 'unidad' ? 'unidad' : 'docena'
+  );
+  const [quantity, setQuantity] = useState<number>(1);
+
+  const currentPrice = useMemo(() => {
+    if (saleType === 'mixto') {
+      return selectedType === 'docena' ? price : price / 12;
+    }
+    return price;
+  }, [price, saleType, selectedType]);
+
+  const subtotal = currentPrice * quantity;
+
+  const handleIncrement = () => setQuantity(q => q + 1);
+  const handleDecrement = () => setQuantity(q => (q > 1 ? q - 1 : 1));
+
+  const generateWhatsAppLink = () => {
+    const productUrl = `${SITE_CONFIG.url}/producto/${productSlug}`;
+    const typeLabel = selectedType === 'docena' 
+      ? (quantity > 1 ? 'docenas' : 'docena') 
+      : (quantity > 1 ? 'unidades' : 'unidad');
+      
+    const message = `Hola, vengo del catálogo web. Me interesa hacer un pedido:\n\n*Producto:* ${productName}\n*Cantidad:* ${quantity} ${typeLabel}\n*Subtotal estimado:* ${currency} ${subtotal.toFixed(2)}\n\n*Enlace:* ${productUrl}\n\n¿Podrían indicarme los pasos a seguir?`;
+    
+    return `https://api.whatsapp.com/send?phone=${SITE_CONFIG.contact.whatsapp}&text=${encodeURIComponent(message)}`;
+  };
+
+  return (
+    <div className="bg-cream-100 p-6 rounded-2xl border border-brand-border shadow-sm">
+      <h3 className="text-lg font-bold text-brand-text mb-4">Configurar Pedido</h3>
+
+      {saleType === 'mixto' && (
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => { setSelectedType('docena'); setQuantity(1); }}
+            className={`flex-1 py-2 rounded-lg font-semibold border-2 transition-colors ${selectedType === 'docena' ? 'border-gold bg-gold-light/20 text-gold-dark' : 'border-brand-border bg-white text-brand-muted hover:border-gold-light'}`}
+          >
+            Por Docena
+          </button>
+          <button
+            onClick={() => { setSelectedType('unidad'); setQuantity(1); }}
+            className={`flex-1 py-2 rounded-lg font-semibold border-2 transition-colors ${selectedType === 'unidad' ? 'border-gold bg-gold-light/20 text-gold-dark' : 'border-brand-border bg-white text-brand-muted hover:border-gold-light'}`}
+          >
+            Por Unidad
+          </button>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <label className="block text-sm font-semibold text-brand-text mb-2">
+          Cantidad de {selectedType === 'docena' ? 'docenas' : 'unidades'}
+        </label>
+        <div className="flex items-center justify-between bg-white border border-brand-border rounded-lg p-1 w-48">
+          <button onClick={handleDecrement} aria-label="Disminuir cantidad" className="w-10 h-10 flex items-center justify-center text-gold-dark hover:bg-cream-200 rounded-md transition-colors text-xl font-bold">−</button>
+          <span className="font-bold text-brand-text text-lg" aria-live="polite">{quantity}</span>
+          <button onClick={handleIncrement} aria-label="Aumentar cantidad" className="w-10 h-10 flex items-center justify-center text-gold-dark hover:bg-cream-200 rounded-md transition-colors text-xl font-bold">+</button>
+        </div>
+      </div>
+
+      <div className="border-t border-brand-border pt-4">
+        <div className="flex justify-between items-end mb-6">
+          <span className="text-brand-muted font-semibold">Subtotal estimado:</span>
+          <div className="text-right">
+            <span className="text-gold-dark font-bold text-sm">{currency}</span>
+            <span className="text-3xl font-bold text-brand-text ml-1">{subtotal.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <a 
+          href={generateWhatsAppLink()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#128C7E] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          Hacer Pedido por WhatsApp
+        </a>
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="src/features/products/components/ProductCard.astro">
+---
+import type { PublicProduct } from '../services/publicProducts';
+
+interface Props {
+  product: PublicProduct;
+}
+
+const { product } = Astro.props;
+
+const unitPrice = product.sale_type === 'docena' ? (product.price / 12).toFixed(2) : null;
+---
+
+<article class="group bg-white rounded-2xl overflow-hidden border border-brand-border shadow-sm hover:shadow-xl hover:border-gold-light transition-all duration-300 flex flex-col h-full relative">
+  
+  {product.is_featured && (
+    <span class="absolute top-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm">
+      ⭐ Destacado
+    </span>
+  )}
+  <span class="absolute top-3 left-3 bg-gold text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm capitalize">
+    {product.sale_type === 'mixto' ? 'Docena / Detal' : `Por ${product.sale_type}`}
+  </span>
+
+  <a href={`/producto/${product.slug}`} class="relative h-64 overflow-hidden bg-cream-100 flex-shrink-0 block">
+    {product.primary_image_url ? (
+      <img 
+        src={product.primary_image_url} 
+        alt={product.name}
+        width="400"
+        height="256"
+        loading="lazy"
+        decoding="async"
+        class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+      />
+    ) : (
+      <div class="w-full h-full flex flex-col items-center justify-center text-brand-muted">
+        <span class="text-3xl mb-2">🖼️</span>
+        <span class="text-sm font-medium">Sin imagen</span>
+      </div>
+    )}
+  </a>
+
+  <div class="p-5 flex flex-col flex-1">
+    <div class="mb-2">
+      <span class="text-xs font-semibold text-gold-dark uppercase tracking-wider">
+        {product.categories?.name || 'Varios'}
+      </span>
+    </div>
+    
+    <a href={`/producto/${product.slug}`} class="block mb-2">
+      <h3 class="font-serif text-xl font-bold text-brand-text leading-tight group-hover:text-gold-dark transition-colors">
+        {product.name}
+      </h3>
+    </a>
+    
+    <p class="text-sm text-brand-muted line-clamp-2 mb-4 flex-1">
+      {product.description}
+    </p>
+
+    <div class="mt-auto pt-4 border-t border-cream-200">
+      <div class="flex justify-between items-end mb-4">
+        <div>
+          <span class="text-sm text-gold-dark font-bold">{product.currency}</span>
+          <span class="text-2xl font-bold text-brand-text ml-1">{product.price.toFixed(2)}</span>
+        </div>
+        {unitPrice && (
+          <div class="text-right">
+            <span class="block text-xs text-brand-muted">Ref. Unidad</span>
+            <span class="text-sm font-semibold text-brand-muted">{product.currency} {unitPrice}</span>
+          </div>
+        )}
+      </div>
+
+      <a 
+        href={`/producto/${product.slug}`} 
+        class="w-full block text-center bg-gold text-white font-semibold py-2.5 rounded-lg hover:bg-gold-dark transition-colors shadow-sm"
+      >
+        Ver Detalles →
+      </a>
+    </div>
+  </div>
+</article>
+</file>
+
+<file path="src/features/products/services/publicProducts.ts">
+import { supabase } from '@/lib/supabase';
+import type { Product, Category } from '@/core/types/database';
+
+export interface PublicProduct extends Omit<Product, 'categories'> {
+  primary_image_url: string | null;
+  categories: { name: string; slug: string } | null;
+}
+
+export interface ProductDetail extends Omit<Product, 'categories'> {
+  images: { url: string | null; is_primary: boolean }[];
+  categories: { name: string; slug: string } | null;
+}
+
+// FIX IMPORTANTE-7 (Parte 2): Usamos Omit para evitar el choque de tipos con la interfaz original
+interface RawProduct extends Omit<Product, 'categories'> {
+  categories: { name: string; slug: string } | null;
+  product_images: { storage_path: string; is_primary: boolean; display_order?: number }[];
+}
+
+// FIX: Permitimos undefined en la firma para que coincida con el operador optional chaining (?)
+const getImageUrl = (path: string | null | undefined) => {
+  if (!path) return null;
+  const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+  return data.publicUrl;
+};
+
+export const getCategories = async (): Promise<Category[]> => {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+  return data as Category[];
+};
+
+export const getPublicProducts = async (): Promise<{ featured: PublicProduct[], regular: PublicProduct[] }> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories (name, slug),
+      product_images (storage_path, is_primary)
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(48);
+
+  if (error || !data) {
+    console.error('Error fetching public products:', error);
+    return { featured: [], regular: [] };
+  }
+
+  const formattedProducts: PublicProduct[] = (data as unknown as RawProduct[]).map((item) => {
+    const primaryImage = item.product_images?.find((img) => img.is_primary) 
+                      || item.product_images?.[0];
+
+    return {
+      ...item,
+      categories: item.categories,
+      primary_image_url: getImageUrl(primaryImage?.storage_path)
+    };
+  });
+
+  return {
+    featured: formattedProducts.filter(p => p.is_featured),
+    regular: formattedProducts.filter(p => !p.is_featured)
+  };
+};
+
+export const getProductsByCategory = async (categorySlug: string): Promise<PublicProduct[]> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories!inner (name, slug),
+      product_images (storage_path, is_primary)
+    `)
+    .eq('is_active', true)
+    .eq('categories.slug', categorySlug)
+    .order('created_at', { ascending: false })
+    .limit(48);
+
+  if (error || !data) {
+    console.error('Error fetching category products:', error);
+    return [];
+  }
+
+  return (data as unknown as RawProduct[]).map((item) => {
+    const primaryImage = item.product_images?.find((img) => img.is_primary) 
+                      || item.product_images?.[0];
+
+    return {
+      ...item,
+      categories: item.categories,
+      primary_image_url: getImageUrl(primaryImage?.storage_path)
+    };
+  });
+};
+
+export const getProductBySlug = async (slug: string): Promise<ProductDetail | null> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories (name, slug),
+      product_images (storage_path, is_primary, display_order)
+    `)
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single();
+
+  if (error || !data) {
+    console.error('Error fetching product details:', error);
+    return null;
+  }
+
+  const rawData = data as unknown as RawProduct;
+
+  const sortedImages = (rawData.product_images || [])
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+    .map((img) => ({
+      url: getImageUrl(img.storage_path),
+      is_primary: img.is_primary
+    }));
+
+  return {
+    ...rawData,
+    categories: rawData.categories,
+    images: sortedImages
+  };
+};
+</file>
+
+<file path="src/lib/supabase-server.ts">
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import type { AstroCookies } from 'astro';
+
+export const createSupabaseServerClient = (cookies: AstroCookies) => {
+  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Faltan variables de entorno de Supabase.');
+  }
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(key: string) {
+        return cookies.get(key)?.value;
+      },
+      set(key: string, value: string, options: CookieOptions) {
+        cookies.set(key, value, {
+          ...options,
+          path: '/',
+          httpOnly: true,
+          secure: import.meta.env.PROD,
+          sameSite: 'lax',
+          maxAge: 43200 
+        });
+      },
+      remove(key: string, options: CookieOptions) {
+        cookies.delete(key, { ...options, path: '/' });
+      },
+    },
+  });
+};
+</file>
+
+<file path="src/lib/supabase.ts">
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Faltan las variables de entorno de Supabase (URL o ANON_KEY).');
+}
+
+// FIX: En entornos SSR (servidor), NUNCA debemos persistir la sesión globalmente.
+// Esto evita fugas de estado entre diferentes usuarios visitando la tienda pública.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false, 
+    autoRefreshToken: false,
+    detectSessionInUrl: false
+  }
+});
+</file>
+
+<file path="src/pages/admin/categorias/editar/[id].astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { CategoryForm } from '@/features/admin/components/CategoryForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/admin/categorias');
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+const { data: categoryData, error } = await supabase.from('categories').select('*').eq('id', id).single();
+
+if (error || !categoryData) return Astro.redirect('/admin/categorias');
+---
+
+<AdminLayout title="Editar Categoría">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/categorias" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Editar Categoría</h1>
+  </div>
+  <CategoryForm initialData={categoryData as Category} client:load />
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/categorias/index.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import Button from '@/ui/components/Button.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+const { data, error } = await supabase.from('categories').select('*').order('name');
+const categories = (data as Category[]) || [];
+---
+
+<AdminLayout title="Categorías">
+  <div class="mb-8 flex justify-between items-center pb-4 border-b border-brand-border">
+    <div>
+      <h1 class="text-3xl font-bold text-gold-dark">Categorías</h1>
+      <p class="text-brand-muted mt-1">Organiza la taxonomía de tus productos.</p>
+    </div>
+    <Button href="/admin/categorias/nuevo" variant="primary" size="sm">+ Nueva Categoría</Button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+    {error && <div class="p-4 bg-red-50 text-red-600">Error: {error.message}</div>}
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
+            <th class="p-4 font-medium">Nombre</th>
+            <th class="p-4 font-medium">Slug (URL)</th>
+            <th class="p-4 font-medium">Descripción</th>
+            <th class="p-4 font-medium text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-brand-border">
+          {categories.length === 0 ? (
+            <tr><td colspan="4" class="p-8 text-center text-brand-muted italic">No hay categorías registradas.</td></tr>
+          ) : (
+            categories.map((cat) => (
+              <tr class="hover:bg-cream-50 transition-colors">
+                <td class="p-4 font-semibold text-brand-text">{cat.name}</td>
+                <td class="p-4 text-sm text-brand-muted font-mono">{cat.slug}</td>
+                <td class="p-4 text-sm text-brand-muted truncate max-w-xs">{cat.description || '-'}</td>
+                <td class="p-4 text-right">
+                  <a href={`/admin/categorias/editar/${cat.id}`} class="text-gold hover:text-gold-dark font-medium text-sm">Editar</a>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/categorias/nuevo.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { CategoryForm } from '@/features/admin/components/CategoryForm';
+---
+
+<AdminLayout title="Nueva Categoría">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/categorias" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Crear Categoría</h1>
+  </div>
+  <CategoryForm client:load />
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/productos/editar/[id].astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { ProductForm, type InitialProductData } from '@/features/admin/components/ProductForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category, SaleType } from '@/core/types/database';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/admin/productos');
+}
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// 1. Obtener categorías
+const { data: catData } = await supabase.from('categories').select('*').order('name');
+const categories = (catData as Category[]) || [];
+
+// 2. Obtener datos del producto con sus imágenes
+const { data: productData, error } = await supabase
+  .from('products')
+  .select(`
+    *,
+    product_images (id, storage_path, is_primary, display_order)
+  `)
+  .eq('id', id)
+  .single();
+
+if (error || !productData) {
+  return Astro.redirect('/admin/productos');
+}
+
+// 3. Obtener URLs públicas de las imágenes
+const existingImages = (productData.product_images || [])
+  .sort((a: any, b: any) => a.display_order - b.display_order)
+  .map((img: any) => {
+    const { data } = supabase.storage.from('product-images').getPublicUrl(img.storage_path);
+    return {
+      id: img.id,
+      path: img.storage_path,
+      url: data.publicUrl,
+      is_primary: img.is_primary
+    };
+  });
+
+// 4. Formatear datos para la isla
+const initialData: InitialProductData = {
+  id: productData.id,
+  name: productData.name,
+  slug: productData.slug,
+  description: productData.description || '',
+  price: productData.price.toString(),
+  categoryId: productData.category_id || '',
+  saleType: productData.sale_type as SaleType,
+  productionTime: productData.production_time || '',
+  isActive: productData.is_active,
+  isFeatured: productData.is_featured,
+  features: Array.isArray(productData.features) ? productData.features : [],
+  customizations: Array.isArray(productData.customization_options) ? productData.customization_options : [],
+  existingImages
+};
+---
+
+<AdminLayout title="Editar Producto">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/productos" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Editar Producto</h1>
+    <p class="text-brand-muted mt-1">Actualiza los datos, gestiona imágenes o elimina el registro.</p>
+  </div>
+
+  <ProductForm categories={categories} initialData={initialData} client:load />
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/productos/index.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import ProductList from '@/features/admin/components/ProductList.astro';
+---
+
+<AdminLayout title="Productos">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gold-dark">Productos</h1>
+  </div>
+
+  <ProductList />
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/productos/nuevo.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { ProductForm } from '@/features/admin/components/ProductForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// Obtenemos las categorías disponibles para el selector del formulario
+const { data } = await supabase
+  .from('categories')
+  .select('*')
+  .order('name', { ascending: true });
+
+const categories = (data as Category[]) || [];
+---
+
+<AdminLayout title="Nuevo Producto">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/productos" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Crear Nuevo Producto</h1>
+    <p class="text-brand-muted mt-1">Ingresa las especificaciones y configuraciones de manufactura.</p>
+  </div>
+
+  <ProductForm categories={categories} client:load />
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/index.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import Button from '@/ui/components/Button.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// Consultamos las métricas en paralelo para no penalizar el tiempo de carga
+const [
+  { count: totalProducts },
+  { count: activeProducts },
+  { count: totalCategories }
+] = await Promise.all([
+  supabase.from('products').select('*', { count: 'exact', head: true }),
+  supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+  supabase.from('categories').select('*', { count: 'exact', head: true })
+]);
+
+const inactiveProducts = (totalProducts || 0) - (activeProducts || 0);
+---
+
+<AdminLayout title="Dashboard">
+  <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-brand-border pb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gold-dark">Panel de Control</h1>
+      <p class="text-brand-muted mt-1">Resumen general del catálogo y accesos rápidos.</p>
+    </div>
+    <div class="flex gap-3">
+      <Button href="/admin/productos/nuevo" variant="primary" size="sm">
+        + Nuevo Producto
+      </Button>
+      <Button href="/" variant="outline" size="sm" target="_blank">
+        Ver Tienda Pública ↗
+      </Button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-gold-light/20 flex items-center justify-center text-gold-dark text-2xl">
+        📦
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Total Productos</p>
+        <p class="text-3xl font-bold text-brand-text">{totalProducts || 0}</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-2xl">
+        ✨
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Activos</p>
+        <p class="text-3xl font-bold text-brand-text">{activeProducts || 0}</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-red-500 text-2xl">
+        ⏸️
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Borradores / Inactivos</p>
+        <p class="text-3xl font-bold text-brand-text">{inactiveProducts}</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-2xl">
+        🏷️
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-brand-muted uppercase tracking-wider">Categorías</p>
+        <p class="text-3xl font-bold text-brand-text">{totalCategories || 0}</p>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="text-xl font-bold text-brand-text mb-4">Gestión Rápida</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <div class="bg-white p-8 rounded-2xl shadow-sm border border-brand-border hover:border-gold transition-colors group">
+      <h3 class="text-xl font-bold text-gold-dark mb-3 flex items-center gap-2">
+        <span>📋</span> Inventario y Precios
+      </h3>
+      <p class="text-brand-muted mb-6 leading-relaxed">
+        Administra tu catálogo de corte láser. Actualiza precios, sube nuevas fotografías, modifica descripciones y configura modalidades de venta (unidad o docena).
+      </p>
+      <Button href="/admin/productos" variant="secondary" fullWidth class="group-hover:bg-gold group-hover:text-white">
+        Gestionar Productos →
+      </Button>
+    </div>
+
+    <div class="bg-white p-8 rounded-2xl shadow-sm border border-brand-border hover:border-gold transition-colors group">
+      <h3 class="text-xl font-bold text-gold-dark mb-3 flex items-center gap-2">
+        <span>🗂️</span> Taxonomía del Catálogo
+      </h3>
+      <p class="text-brand-muted mb-6 leading-relaxed">
+        Organiza tus productos en eventos o líneas de negocio. Crea, edita o elimina las categorías (15 Años, Bautizos, Bodas, etc.) para facilitar la navegación a tus clientes.
+      </p>
+      <Button href="/admin/categorias" variant="secondary" fullWidth class="group-hover:bg-gold group-hover:text-white">
+        Gestionar Categorías →
+      </Button>
+    </div>
+
+  </div>
+</AdminLayout>
+</file>
+
+<file path="src/pages/admin/login.astro">
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import LoginForm from '@/features/admin/components/LoginForm.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+let errorMessage = '';
+let lastEmail = '';
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const email = formData.get('email')?.toString();
+  const password = formData.get('password')?.toString();
+
+  if (email) lastEmail = email;
+
+  if (email && password) {
+    const supabase = createSupabaseServerClient(Astro.cookies);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      // FIX CRÍTICO-5: Mitigación de Fuerza Bruta y Rate Limiting
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Retraso artificial anti-bots
+      
+      if (error.status === 429) {
+        errorMessage = 'Demasiados intentos fallidos. Por seguridad, espera unos minutos.';
+      } else {
+        errorMessage = 'Credenciales inválidas. Intenta de nuevo.';
+      }
+    } else {
+      return Astro.redirect('/admin');
+    }
+  } else {
+    errorMessage = 'Por favor, completa todos los campos.';
+  }
+}
+---
+
+<BaseLayout title="Acceso Administrativo">
+  <LoginForm errorMessage={errorMessage} defaultEmail={lastEmail} />
+</BaseLayout>
+</file>
+
+<file path="src/pages/api/auth/logout.ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+export const POST: APIRoute = async ({ cookies, redirect }) => {
+  const supabase = createSupabaseServerClient(cookies);
+  await supabase.auth.signOut();
+  
+  // Redirigimos de forma segura al login tras limpiar las cookies
+  return redirect('/admin/login');
+};
+</file>
+
+<file path="src/pages/api/categories/[id].ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  try {
+    const id = params.id;
+    if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
+
+    const supabase = createSupabaseServerClient(cookies);
+    
+    // Validación segura
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    const body = await request.json();
+    const { name, slug, description } = body;
+
+    const { error } = await supabase
+      .from('categories')
+      .update({ name, slug, description: description || null })
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+};
+
+export const DELETE: APIRoute = async ({ params, cookies }) => {
+  try {
+    const id = params.id;
+    if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
+
+    const supabase = createSupabaseServerClient(cookies);
+    
+    // Validación segura
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+
+    if (error) {
+      if (error.code === '23503') {
+        return new Response(
+          JSON.stringify({ 
+            error: 'No se puede eliminar la categoría porque tiene productos vinculados. Reasigna o elimina esos productos primero.' 
+          }), 
+          { status: 400 }
+        );
+      }
+      throw new Error(error.message);
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+};
+</file>
+
+<file path="src/pages/api/categories/index.ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  try {
+    const supabase = createSupabaseServerClient(cookies);
+    
+    // Validación segura
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    const body = await request.json();
+    const { name, slug, description } = body;
+
+    if (!name || !slug) {
+      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([{ name, slug, description: description || null }])
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    return new Response(JSON.stringify({ success: true, data }), { status: 201 });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+};
+</file>
+
+<file path="src/pages/api/products/[id].ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { SaleType } from '@/core/types/database';
+
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
+const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
+function validateImageFile(file: File): string | null {
+  if (!ALLOWED_MIME_TYPES.has(file.type)) return `Tipo de archivo no permitido: ${file.type}`;
+  if (file.size > MAX_SIZE_BYTES) return `El archivo supera el límite de 5MB`;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!ALLOWED_EXTENSIONS.has(ext)) return `Extensión no permitida: .${ext}`;
+  return null;
+}
+
+function parseStringArray(raw: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(raw ?? '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === 'string');
+  } catch {
+    return [];
+  }
+}
+
+const VALID_SALE_TYPES: SaleType[] = ['unidad', 'docena', 'mixto'];
+
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  try {
+    const id = params.id;
+    const supabase = createSupabaseServerClient(cookies);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    const formData = await request.formData();
+    
+    const name = formData.get('name')?.toString();
+    const slug = formData.get('slug')?.toString();
+    const description = formData.get('description')?.toString() || null;
+    const category_id = formData.get('category_id')?.toString() || null;
+    const production_time = formData.get('production_time')?.toString() || null;
+    
+    const is_active = formData.get('is_active') === 'true';
+    const is_featured = formData.get('is_featured') === 'true';
+
+    if (!name || !slug || !id) {
+      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
+    }
+
+    const priceStr = formData.get('price')?.toString();
+    if (!priceStr) {
+      return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
+    }
+    const parsedPrice = parseFloat(priceStr);
+    if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 999999.99) {
+      return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
+    }
+
+    const sale_type = formData.get('sale_type')?.toString() as SaleType;
+    if (!VALID_SALE_TYPES.includes(sale_type)) {
+      return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
+    }
+
+    const features = parseStringArray(formData.get('features')?.toString());
+    const customization_options = parseStringArray(formData.get('customization_options')?.toString());
+    
+    const deletedImages = parseStringArray(formData.get('deleted_images')?.toString());
+    const newImages = formData.getAll('images') as File[];
+
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({
+        name,
+        slug,
+        description,
+        price: parsedPrice,
+        category_id,
+        sale_type,
+        production_time,
+        customization_options,
+        features,
+        is_active,
+        is_featured,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
+    }
+
+    // Prevención de Path Traversal / IDOR (Ya implementado previamente)
+    if (deletedImages.length > 0) {
+      const { data: validImages } = await supabase
+        .from('product_images')
+        .select('storage_path')
+        .eq('product_id', id);
+        
+      const validPaths = new Set(validImages?.map(i => i.storage_path) || []);
+      const safeDeletedImages = deletedImages.filter((path: string) => validPaths.has(path));
+
+      if (safeDeletedImages.length > 0) {
+        await supabase.storage.from('product-images').remove(safeDeletedImages);
+        await supabase.from('product_images').delete().in('storage_path', safeDeletedImages);
+      }
+    }
+
+    if (newImages.length > 0) {
+      const imageRecords = [];
+      for (let i = 0; i < newImages.length; i++) {
+        const file = newImages[i];
+        if (!file || file.size === 0) continue;
+        
+        const validationError = validateImageFile(file);
+        if (validationError) {
+           return new Response(JSON.stringify({ error: validationError }), { status: 400 });
+        }
+        
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${id}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, file);
+
+        if (!uploadError) {
+          imageRecords.push({
+            product_id: id,
+            storage_path: fileName,
+            is_primary: false,
+            display_order: 99 + i
+          });
+        }
+      }
+
+      if (imageRecords.length > 0) {
+        await supabase.from('product_images').insert(imageRecords);
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
+      { status: 500 }
+    );
+  }
+};
+
+export const DELETE: APIRoute = async ({ params, cookies }) => {
+  try {
+    const id = params.id;
+    const supabase = createSupabaseServerClient(cookies);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
+
+    const { data: images } = await supabase
+      .from('product_images')
+      .select('storage_path')
+      .eq('product_id', id);
+
+    if (images && images.length > 0) {
+      const paths = images.map(img => img.storage_path);
+      await supabase.storage.from('product-images').remove(paths);
+    }
+
+    const { error } = await supabase.from('products').delete().eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
+      { status: 500 }
+    );
+  }
+};
+</file>
+
+<file path="src/pages/api/products/index.ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { SaleType } from '@/core/types/database';
+
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
+const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
+function validateImageFile(file: File): string | null {
+  if (!ALLOWED_MIME_TYPES.has(file.type)) return `Tipo de archivo no permitido: ${file.type}`;
+  if (file.size > MAX_SIZE_BYTES) return `El archivo supera el límite de 5MB`;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!ALLOWED_EXTENSIONS.has(ext)) return `Extensión no permitida: .${ext}`;
+  return null;
+}
+
+// FIX MEJORA-6: Parseo robusto para evitar inyección de objetos JSON
+function parseStringArray(raw: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(raw ?? '[]');
+    if (!Array.isArray(parsed)) return [];
+    // Filtramos para garantizar que cada elemento sea estrictamente un string
+    return parsed.filter((item): item is string => typeof item === 'string');
+  } catch {
+    return [];
+  }
+}
+
+// FIX IMPORTANTE-2: Lista blanca de tipos de venta permitidos
+const VALID_SALE_TYPES: SaleType[] = ['unidad', 'docena', 'mixto'];
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  try {
+    const supabase = createSupabaseServerClient(cookies);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+    }
+
+    const formData = await request.formData();
+    
+    const name = formData.get('name')?.toString();
+    const slug = formData.get('slug')?.toString();
+    const description = formData.get('description')?.toString() || null;
+    const category_id = formData.get('category_id')?.toString() || null;
+    const production_time = formData.get('production_time')?.toString() || null;
+    
+    const is_active = formData.get('is_active') === 'true';
+    const is_featured = formData.get('is_featured') === 'true';
+
+    if (!name || !slug) {
+      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
+    }
+
+    // FIX IMPORTANTE-3 y MEJORA-5: Validación estricta matemática del precio
+    const priceStr = formData.get('price')?.toString();
+    if (!priceStr) {
+      return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
+    }
+    const parsedPrice = parseFloat(priceStr);
+    if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 999999.99) {
+      return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
+    }
+
+    // FIX IMPORTANTE-2: Validación del Enum
+    const sale_type = formData.get('sale_type')?.toString() as SaleType;
+    if (!VALID_SALE_TYPES.includes(sale_type)) {
+      return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
+    }
+
+    // Aplicamos el parseo seguro
+    const features = parseStringArray(formData.get('features')?.toString());
+    const customization_options = parseStringArray(formData.get('customization_options')?.toString());
+
+    const images = formData.getAll('images') as File[];
+
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .insert([{
+        name,
+        slug,
+        description,
+        price: parsedPrice,
+        category_id,
+        sale_type,
+        production_time,
+        customization_options,
+        features,
+        is_active,
+        is_featured
+      }])
+      .select()
+      .single();
+
+    if (productError || !productData) {
+      return new Response(JSON.stringify({ error: productError?.message || 'Error al crear producto' }), { status: 500 });
+    }
+
+    if (images.length > 0) {
+      const imageRecords = [];
+      
+      for (let i = 0; i < images.length; i++) {
+        const file = images[i];
+        
+        if (!file || file.size === 0) continue;
+        
+        const validationError = validateImageFile(file);
+        if (validationError) {
+           return new Response(JSON.stringify({ error: validationError }), { status: 400 });
+        }
+        
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${productData.id}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, file);
+
+        if (!uploadError) {
+          imageRecords.push({
+            product_id: productData.id,
+            storage_path: fileName,
+            is_primary: i === 0,
+            display_order: i
+          });
+        }
+      }
+
+      if (imageRecords.length > 0) {
+        await supabase.from('product_images').insert(imageRecords);
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, data: productData }), { status: 201 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
+      { status: 500 }
+    );
+  }
+};
+</file>
+
+<file path="src/pages/categoria/[slug].astro">
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import ProductCard from '@/features/products/components/ProductCard.astro';
+import { getCategories, getProductsByCategory } from '@/features/products/services/publicProducts';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const categories = await getCategories();
+const currentCategory = categories.find(c => c.slug === slug);
+
+if (!currentCategory) {
+  return Astro.redirect('/404');
+}
+
+const products = await getProductsByCategory(slug);
+
+const layoutProps = {
+  title: currentCategory.name,
+  ...(currentCategory.description ? { description: currentCategory.description } : {})
+};
+---
+
+<BaseLayout {...layoutProps}>
+  
+  <section class="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[200px] md:min-h-[230px] text-center px-6 py-6 bg-gradient-to-br from-gold to-gold-dark rounded-3xl text-white mb-10 shadow-lg relative overflow-hidden">
+    <div class="relative z-10 w-full">
+      <span class="inline-block bg-white/20 text-white border border-white/30 px-4 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase mb-3 shadow-sm">
+        Colección Exclusiva
+      </span>
+      
+      <h1 class="text-2xl md:text-4xl font-bold mb-2 font-serif tracking-wide drop-shadow-sm">
+        {currentCategory.name}
+      </h1>
+      
+      <p class="text-sm md:text-base max-w-2xl mx-auto italic text-cream-100 leading-relaxed">
+        {currentCategory.description || 'Explora nuestra selección de diseños exclusivos y personalizados.'}
+      </p>
+
+      <div class="mt-4 pt-3 border-t border-white/20 max-w-xs mx-auto">
+        <p class="text-[10px] md:text-xs text-cream-100 font-medium uppercase tracking-wider">
+          {products.length} {products.length === 1 ? 'diseño disponible' : 'diseños disponibles'}
+        </p>
+      </div>
+    </div>
+    
+    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 bg-white opacity-10 rounded-full blur-2xl"></div>
+  </section>
+
+  <section class="mb-10">
+    <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+      <a href="/" class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark transition-all shadow-sm">
+        Todos
+      </a>
+      {categories.map(cat => (
+        <a 
+          href={`/categoria/${cat.slug}`} 
+          class={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all shadow-sm ${
+            cat.slug === slug 
+              ? 'border-gold bg-gold text-white' 
+              : 'border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark'
+          }`}
+        >
+          {cat.name}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {products.length > 0 ? (
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          Diseños Disponibles
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </section>
+  ) : (
+    <div class="text-center py-16 bg-cream-100 rounded-2xl border border-brand-border mb-16 shadow-sm">
+      <span class="text-4xl mb-3 block">🛠️</span>
+      <h3 class="text-xl font-bold text-brand-text mb-2">Próximamente</h3>
+      <p class="text-brand-muted text-sm">Aún estamos preparando diseños para esta categoría.</p>
+    </div>
+  )}
+
+</BaseLayout>
+</file>
+
+<file path="src/pages/producto/[slug].astro">
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import { getProductBySlug } from '@/features/products/services/publicProducts';
+import { OrderCalculator } from '@/features/products/components/OrderCalculator';
+import { ImageGallery } from '@/features/products/components/ImageGallery';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const product = await getProductBySlug(slug);
+
+if (!product) {
+  return Astro.redirect('/404');
+}
+
+// FIX: Aserción estricta de tipos JSON a string[]
+const features: string[] = Array.isArray(product.features) ? (product.features as string[]) : [];
+const customizations: string[] = Array.isArray(product.customization_options) ? (product.customization_options as string[]) : [];
+
+const primaryImage = product.images.find(i => i.is_primary)?.url || product.images[0]?.url;
+
+const layoutProps = {
+  title: product.name,
+  ...(product.description ? { description: product.description } : {}),
+  ...(primaryImage ? { image: primaryImage } : {})
+};
+---
+
+<BaseLayout {...layoutProps}>
+  
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description || "Diseño en MDF",
+    "image": product.images.map(i => i.url).filter(Boolean),
+    "offers": {
+      "@type": "Offer",
+      "price": product.price,
+      "priceCurrency": product.currency || "USD",
+      "availability": product.is_active ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+    }
+  })} />
+
+  <nav aria-label="Breadcrumb" class="mb-8">
+    <ol class="flex items-center flex-wrap gap-2 text-sm text-brand-muted">
+      <li>
+        <a href="/" class="hover:text-gold transition-colors flex items-center gap-1">
+          <span>🏠</span> Inicio
+        </a>
+      </li>
+      <li><span class="text-brand-border">/</span></li>
+      
+      {product.categories && (
+        <>
+          <li>
+            <a href={`/categoria/${product.categories.slug}`} class="hover:text-gold transition-colors">
+              {product.categories.name}
+            </a>
+          </li>
+          <li><span class="text-brand-border">/</span></li>
+        </>
+      )}
+      
+      <li class="font-semibold text-brand-text truncate max-w-[200px] sm:max-w-md" aria-current="page" title={product.name}>
+        {product.name}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+    
+    <ImageGallery client:load images={product.images} productName={product.name} />
+
+    <div class="flex flex-col">
+      {product.categories && (
+        <span class="text-sm font-bold text-gold-dark tracking-wider uppercase mb-2">
+          {product.categories.name}
+        </span>
+      )}
+      
+      <h1 class="text-4xl font-bold font-serif text-brand-text mb-4 leading-tight">
+        {product.name}
+      </h1>
+      
+      <p class="text-lg text-brand-muted mb-8 leading-relaxed">
+        {product.description}
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-brand-border">
+        {features.length > 0 && (
+          <div>
+            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
+              📋 Características
+            </h3>
+            <ul class="space-y-2">
+              {features.map(feature => (
+                <li class="flex items-start text-brand-muted">
+                  <span class="text-gold mr-2 mt-0.5">✓</span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {customizations.length > 0 && (
+          <div>
+            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
+              ✨ Personalización
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              {customizations.map(custom => (
+                <span class="bg-cream-200 text-brand-text border border-brand-border text-sm px-3 py-1 rounded-full">
+                  {custom}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div class="mb-8">
+        {product.production_time && (
+          <p class="text-sm text-brand-muted flex items-center gap-2">
+            <span class="text-xl">⏱️</span> 
+            <strong>Tiempo de producción:</strong> {product.production_time}
+          </p>
+        )}
+      </div>
+
+      <div class="mt-auto">
+        <OrderCalculator 
+          client:load
+          productName={product.name}
+          productSlug={product.slug}
+          price={product.price}
+          currency={product.currency || 'USD'}
+          saleType={product.sale_type || 'docena'}
+        />
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+</file>
+
+<file path="src/pages/sitemap.xml.ts">
+import type { APIRoute } from 'astro';
+import { supabase } from '@/lib/supabase';
+import { SITE_CONFIG } from '@/core/constants/site';
+
+// Función para escapar caracteres especiales en el XML y evitar rupturas de sintaxis
+const escapeXml = (unsafe: string) => {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+};
+
+export const GET: APIRoute = async () => {
+  const [productsRes, categoriesRes] = await Promise.all([
+    supabase.from('products').select('slug, updated_at').eq('is_active', true),
+    supabase.from('categories').select('slug')
+  ]);
+
+  const products = productsRes.data || [];
+  const categories = categoriesRes.data || [];
+
+  // FIX CRÍTICO 2: Codificación UTF-8 correcta y escapado de URLs
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>${SITE_CONFIG.url}/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+      ${categories.map(cat => `
+        <url>
+          <loc>${SITE_CONFIG.url}/categoria/${escapeXml(cat.slug)}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `).join('')}
+      ${products.map(prod => `
+        <url>
+          <loc>${SITE_CONFIG.url}/producto/${escapeXml(prod.slug)}</loc>
+          <lastmod>${new Date(prod.updated_at).toISOString().split('T')[0]}</lastmod>
+          <changefreq>monthly</changefreq>
+          <priority>0.7</priority>
+        </url>
+      `).join('')}
+    </urlset>
+  `.trim();
+
+  return new Response(sitemap, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=86400' // Opcional: Recomendado por la auditoría
+    }
+  });
+};
+</file>
+
+<file path="src/ui/components/Button.astro">
+---
+import type { HTMLAttributes } from 'astro/types';
+import { getButtonClasses, type ButtonVariant, type ButtonSize } from '@/ui/utils/buttonClasses';
+
+// FIX: Extendemos los atributos base pero añadimos soporte explícito para enlaces
+interface Props extends HTMLAttributes<'button'> {
+  href?: string;
+  target?: '_blank' | '_self' | '_parent' | '_top';
+  rel?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  fullWidth?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  target,
+  rel,
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const combinedClasses = getButtonClasses(variant, size, fullWidth, className);
+
+// Definimos si renderiza un enlace <a> o un botón <button>
+const Tag = href ? 'a' : 'button';
+
+// Seguridad: Si abre en una pestaña nueva, aplicamos protecciones de seguridad
+const secureRel = target === '_blank' ? (rel || 'noopener noreferrer') : rel;
+---
+
+<Tag href={href} target={target} rel={secureRel} class={combinedClasses} {...(href ? {} : rest)}>
+  <slot />
+</Tag>
+</file>
+
+<file path="src/ui/components/Button.tsx">
+import React from 'react';
+import { getButtonClasses, type ButtonVariant, type ButtonSize } from '@/ui/utils/buttonClasses';
+
+// FIX IMPORTANTE-7: Tipado estricto eliminando el uso de 'any'
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & 
+  React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    fullWidth?: boolean;
+    href?: string;
+  };
+
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  className = '',
+  href,
+  children,
+  ...rest
+}) => {
+  const combinedClasses = getButtonClasses(variant, size, fullWidth, className);
+  
+  if (href) {
+    return (
+      <a href={href} className={combinedClasses} {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <button className={combinedClasses} {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+      {children}
+    </button>
+  );
+};
+</file>
+
+<file path="src/ui/components/ConfirmModal.tsx">
+import React, { useEffect } from 'react';
+import { Button } from './Button';
+
+interface ConfirmModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isLoading?: boolean;
+}
+
+export const ConfirmModal: React.FC<ConfirmModalProps> = ({ 
+  isOpen, title, message, onConfirm, onCancel, isLoading = false 
+}) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in-up">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl flex-shrink-0">
+            ⚠️
+          </div>
+          <h2 id="modal-title" className="text-xl font-bold text-brand-text">{title}</h2>
+        </div>
+        
+        <p className="text-brand-muted mb-8 leading-relaxed">
+          {message}
+        </p>
+
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <Button type="button" variant="neutral" onClick={onCancel} disabled={isLoading} fullWidth>
+            Cancelar
+          </Button>
+          <Button type="button" variant="danger" onClick={onConfirm} disabled={isLoading} fullWidth>
+            {isLoading ? 'Procesando...' : 'Sí, eliminar'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="src/ui/layouts/AdminLayout.astro">
+---
+import { ClientRouter } from 'astro:transitions';
+import { SITE_CONFIG } from '@/core/constants/site';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const pageTitle = `${title} | Admin - ${SITE_CONFIG.name}`;
+const userEmail = Astro.locals.userEmail;
+const currentPath = Astro.url.pathname;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pageTitle}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <ClientRouter />
+  </head>
+  <body class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-cream-100 text-brand-text selection:bg-gold selection:text-white">
+    
+    <div class="md:hidden flex items-center justify-between bg-white p-4 border-b border-brand-border z-20">
+      <div class="flex items-center gap-3">
+        <img src="/logo.webp" alt="Logo" class="h-6 w-auto drop-shadow-sm" />
+        <span class="text-[10px] font-bold text-gold-dark tracking-widest uppercase">Admin</span>
+      </div>
+      <button id="mobile-menu-btn" class="text-brand-text p-2 focus:outline-none" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-sidebar">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+    </div>
+
+    <aside id="mobile-sidebar" class="w-64 flex-shrink-0 h-full bg-white border-r border-brand-border flex-col hidden md:flex absolute md:relative z-10 shadow-xl md:shadow-sm transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+      
+      <div class="p-6 border-b border-brand-border flex flex-col items-center text-center">
+        <a href="/admin" class="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
+          <img src="/logo.webp" alt="Logo Creaciones Lolita" class="h-10 w-auto drop-shadow-sm" />
+          <span class="sr-only">Admin Creaciones Lolita</span>
+          <span class="text-[11px] font-bold text-gold-dark tracking-[0.2em] uppercase">Panel de Control</span>
+        </a>
+      </div>
+      
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+        <a href="/admin" class={`block px-4 py-2 rounded-lg transition-colors ${currentPath === '/admin' ? 'bg-gold text-white font-semibold' : 'hover:bg-cream-200'}`} aria-current={currentPath === '/admin' ? 'page' : undefined}>Dashboard</a>
+        <a href="/admin/productos" class={`block px-4 py-2 rounded-lg transition-colors ${currentPath.startsWith('/admin/productos') ? 'bg-gold text-white font-semibold' : 'hover:bg-cream-200'}`} aria-current={currentPath.startsWith('/admin/productos') ? 'page' : undefined}>Productos</a>
+        <a href="/admin/categorias" class={`block px-4 py-2 rounded-lg transition-colors ${currentPath.startsWith('/admin/categorias') ? 'bg-gold text-white font-semibold' : 'hover:bg-cream-200'}`} aria-current={currentPath.startsWith('/admin/categorias') ? 'page' : undefined}>Categorías</a>
+      </nav>
+
+      <div class="p-4 border-t border-brand-border mt-auto">
+        <p class="text-sm text-brand-muted mb-4 truncate" title={userEmail}>{userEmail}</p>
+        <form method="POST" action="/api/auth/logout">
+          <button type="submit" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
+            Cerrar Sesión
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
+
+    <main class="flex-1 h-full overflow-y-auto relative w-full">
+      <div class="p-4 md:p-8 max-w-7xl mx-auto">
+        <slot />
+      </div>
+    </main>
+
+    <script>
+      const btn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('mobile-sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+
+      const toggleMenu = () => {
+        const isClosed = sidebar?.classList.contains('-translate-x-full');
+        if (isClosed) {
+          sidebar?.classList.remove('hidden', '-translate-x-full');
+          overlay?.classList.remove('hidden');
+          btn?.setAttribute('aria-expanded', 'true');
+        } else {
+          sidebar?.classList.add('-translate-x-full');
+          overlay?.classList.add('hidden');
+          btn?.setAttribute('aria-expanded', 'false');
+          setTimeout(() => sidebar?.classList.add('hidden'), 300); // Wait for transition
+        }
+      };
+
+      btn?.addEventListener('click', toggleMenu);
+      overlay?.addEventListener('click', toggleMenu);
+    </script>
+  </body>
+</html>
+</file>
+
+<file path="src/ui/layouts/BaseLayout.astro">
+---
+import { ClientRouter } from 'astro:transitions';
+import { SITE_CONFIG } from '@/core/constants/site';
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { 
+  title = SITE_CONFIG.name, 
+  description = SITE_CONFIG.description,
+  image
+} = Astro.props;
+
+const pageTitle = title === SITE_CONFIG.name ? title : `${title} | ${SITE_CONFIG.name}`;
+const canonicalURL = new URL(Astro.url.pathname, SITE_CONFIG.url);
+const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).toString();
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content={SITE_CONFIG.name} />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={pageTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+    
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen flex flex-col bg-cream-100 text-brand-text selection:bg-gold selection:text-white">
+    
+    <header class="bg-gradient-to-r from-gold to-gold-dark text-white py-4 shadow-md relative overflow-hidden">
+      <div class="container mx-auto px-4 flex justify-between items-center relative z-10">
+        <a href="/" class="flex items-center gap-3 text-2xl font-bold tracking-wider hover:opacity-90 transition-opacity">
+          <img src="/logo.webp" alt="Logo Creaciones Lolita" class="h-10 w-auto drop-shadow-sm" />
+          <span class="sr-only">Creaciones Lolita</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <footer class="bg-cream-200 border-t-2 border-gold py-8 mt-12">
+      <div class="container mx-auto px-4 text-center text-brand-muted">
+        <p>&copy; {new Date().getFullYear()} {SITE_CONFIG.name}. Todos los derechos reservados.</p>
+        <p class="mt-2 text-sm italic">Productos artesanales con amor 💛</p>
+      </div>
+    </footer>
+    
+  </body>
+</html>
+</file>
+
+<file path="src/ui/utils/buttonClasses.ts">
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'whatsapp' | 'danger' | 'neutral';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+export const getButtonClasses = (
+  variant: ButtonVariant = 'primary',
+  size: ButtonSize = 'md',
+  fullWidth: boolean = false,
+  customClass: string = ''
+): string => {
+  const baseStyles = 'inline-flex items-center justify-center font-semibold transition-all duration-300 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  
+  const variants: Record<ButtonVariant, string> = {
+    primary: 'bg-gradient-to-r from-gold to-gold-dark text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:ring-gold',
+    secondary: 'bg-cream-200 text-gold-dark hover:bg-gold-light/20 focus:ring-cream-300',
+    outline: 'border-2 border-gold text-gold-dark hover:bg-gold hover:text-white focus:ring-gold',
+    whatsapp: 'bg-[#25D366] text-white shadow-md hover:bg-[#128C7E] hover:shadow-lg hover:-translate-y-0.5 focus:ring-[#25D366]',
+    danger: 'border-2 border-red-500 text-red-500 bg-transparent hover:bg-red-50 focus:ring-red-500',
+    neutral: 'border-2 border-brand-border bg-white text-brand-muted hover:bg-cream-200 focus:ring-brand-border'
+  };
+
+  const sizes: Record<ButtonSize, string> = {
+    sm: 'px-4 py-2 text-sm',
+    md: 'px-6 py-3 text-base',
+    lg: 'px-8 py-4 text-lg',
+  };
+
+  const widthStyle = fullWidth ? 'w-full' : '';
+  
+  return `${baseStyles} ${variants[variant]} ${sizes[size]} ${widthStyle} ${customClass}`.trim();
+};
+</file>
+
+<file path="src/env.d.ts">
+/// <reference path="../.astro/types.d.ts" />
+/// <reference types="astro/client" />
+
+interface ImportMetaEnv {
+  readonly PUBLIC_SUPABASE_URL: string;
+  readonly PUBLIC_SUPABASE_ANON_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+declare namespace App {
+  interface Locals {
+    userEmail?: string;
+  }
+}
+</file>
+
+<file path="src/middleware.ts">
+import { defineMiddleware } from 'astro:middleware';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+export const onRequest = defineMiddleware(async ({ cookies, url, request, redirect, locals }, next) => {
+  const isApiMutation = url.pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
+  const isLoginPage = url.pathname === '/admin/login';
+
+  if (url.pathname.startsWith('/admin') || isApiMutation) {
+    const supabase = createSupabaseServerClient(cookies);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      if (isApiMutation) {
+        return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+      }
+      if (!isLoginPage) {
+        return redirect('/admin/login');
+      }
+    }
+
+    if (user && isLoginPage) {
+      return redirect('/admin');
+    }
+
+    if (user && typeof user.email === 'string') {
+      locals.userEmail = user.email;
+    }
+  }
+
+  const response = await next();
+  
+  // FIX IMPORTANTE-8 (Cerrando el Bloque Naranja): Headers de Seguridad Restantes
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+  );
+  
+  if (import.meta.env.PROD) {
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  }
+
+  // FIX MEJORA-3 (Bloque Amarillo): Caché en rutas públicas para rendimiento extremo
+  if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
+    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  }
+
+  return response;
+});
+</file>
+
+<file path="src/pages/index.astro">
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import ProductCard from '@/features/products/components/ProductCard.astro';
+import { getPublicProducts, getCategories } from '@/features/products/services/publicProducts';
+
+const [{ featured, regular }, categories] = await Promise.all([
+  getPublicProducts(),
+  getCategories()
+]);
+---
+
+<BaseLayout title="Catálogo de Corte y Grabado Láser">
+  
+  <section class="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[200px] md:min-h-[230px] text-center px-6 py-6 bg-gradient-to-br from-gold to-gold-dark rounded-3xl text-white mb-10 shadow-lg relative overflow-hidden">
+    <div class="relative z-10 w-full">
+      <span class="inline-block bg-white/20 text-white border border-white/30 px-4 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase mb-3 shadow-sm">
+        Catálogo General
+      </span>
+      
+      <h1 class="text-2xl md:text-4xl font-bold mb-2 font-serif tracking-wide drop-shadow-sm">
+        Arte y Precisión en MDF
+      </h1>
+      
+      <p class="text-sm md:text-base max-w-2xl mx-auto italic text-cream-100 leading-relaxed">
+        Cada pieza es diseñada y elaborada con dedicación para hacer tu evento inolvidable.
+      </p>
+
+      <div class="mt-4 pt-3 border-t border-white/20 max-w-xs mx-auto">
+        <p class="text-[10px] md:text-xs text-cream-100 font-medium uppercase tracking-wider">
+          Corte láser de alta calidad en Venezuela
+        </p>
+      </div>
+    </div>
+    
+    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 bg-white opacity-10 rounded-full blur-2xl"></div>
+  </section>
+
+  {categories.length > 0 && (
+    <section class="mb-10">
+      <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+        <a href="/" class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-gold bg-gold text-white shadow-sm transition-all">
+          Todos
+        </a>
+        {categories.map(cat => (
+          <a 
+            href={`/categoria/${cat.slug}`} 
+            class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark transition-all shadow-sm"
+          >
+            {cat.name}
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {featured.length > 0 && (
+    <section class="mb-14">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          ⭐ Productos Destacados
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {featured.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  {regular.length > 0 && (
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          🏷️ Nuestro Catálogo
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {regular.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  {featured.length === 0 && regular.length === 0 && (
+    <div class="text-center py-16 text-brand-muted">
+      <p class="text-lg italic">No hay productos disponibles en este momento.</p>
+    </div>
+  )}
+
+</BaseLayout>
+</file>
+
+<file path="src/styles/global.css">
+@import "tailwindcss";
+
+@theme {
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, sans-serif;
+  
+  /* Paleta Creaciones Lolita */
+  --color-cream-100: #FFF8E1;
+  --color-cream-200: #FAF3E0;
+  --color-cream-300: #F5F5DC;
+  
+  --color-gold-light: #E5C547;
+  --color-gold: #D4AF37;
+  --color-gold-dark: #B8941F;
+  
+  --color-brand-text: #3D3D3D;
+  --color-brand-muted: #6B6B6B;
+  --color-brand-border: #E8D7C3;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-serif);
+    background-color: var(--color-cream-300);
+    color: var(--color-brand-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Soporte para animaciones de View Transitions de Astro */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+</file>
+
+<file path=".gitignore">
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+# Cloudflare Wrangler state
+.wrangler/
+.wrangler/state/
+supabase/.temp/
+</file>
+
+<file path="README.md">
+# 💛 Catálogo Creaciones Lolita V2
+
+Sistema de catálogo y comercio electrónico especializado en productos de corte y grabado láser en MDF. Arquitectura moderna, rápida y segura diseñada para alto rendimiento SEO y administración ágil.
+
+## 🚀 Stack Tecnológico
+
+- **Framework:** [Astro](https://astro.build) (Server-Side Rendering)
+- **UI & Componentes:** React 19 + Tailwind CSS v4
+- **Base de Datos & Auth:** Supabase (PostgreSQL)
+- **Despliegue:** Cloudflare Pages & Workers
+
+## 🛡️ Características de Seguridad y Rendimiento
+- Autenticación segura mediante SSR y políticas HTTP (CSP, XSS, HSTS).
+- Rate Limiting implementado contra ataques de fuerza bruta.
+- Saneamiento y validación estricta de subidas de archivos (MIME/Weight checks).
+- Pre-carga (Prefetching) optimizado en estrategia `hover`.
+- Open Graph y JSON-LD dinámicos para SEO perfecto en Redes Sociales.
+
+## 🛠️ Comandos de Desarrollo
+
+Clona el proyecto, instala dependencias e inicia el servidor de desarrollo:
+
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+
+Requiere configuración previa del archivo `.env` con las credenciales de Supabase (`PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY`).
+</file>
+
+<file path="wrangler.prod.json">
+{
+  "name": "creaciones-lolita-api",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2026-05-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "env": {
+    "production": {
+      "name": "creaciones-lolita-prod"
+    }
+  },
+  "observability": {
+    "enabled": true
+  },
+  "rules": [
+    {
+      "action": "block",
+      "expression": "(http.request.uri.path eq \"/admin/login\" and http.request.method eq \"POST\")",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 60,
+        "requests_per_period": 5,
+        "mitigation_timeout": 600
+      }
+    }
+  ]
+}
+</file>
+
+<file path="astro.config.mjs">
+import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
+import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  output: 'server',
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    }
+  }),
+  integrations: [
+    react()
+  ],
+  vite: {
+    plugins: [tailwindcss()],
+    build: {
+      cssMinify: 'lightningcss'
+    }
+  },
+  prefetch: {
+    prefetchAll: false,
+    defaultStrategy: 'hover'
+  }
+});
+</file>
+
+<file path="package.json">
+{
+  "name": "catalogo-crealolita-v2",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.5.1",
+    "@astrojs/react": "^5.0.5",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.105.4",
+    "@tailwindcss/vite": "^4.3.0",
+    "astro": "^6.3.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10.4.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "extends": "astro/tsconfigs/strictest",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist", "node_modules"]
+}
+</file>
+
+</files>

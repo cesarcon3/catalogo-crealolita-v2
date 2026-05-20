@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
-import tailwind from '@astrojs/tailwind';
 import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   output: 'server',
@@ -11,18 +11,16 @@ export default defineConfig({
     }
   }),
   integrations: [
-    tailwind({
-      applyBaseStyles: false,
-    }),
     react()
   ],
-  prefetch: {
-    prefetchAll: true,
-    defaultStrategy: 'viewport'
-  },
   vite: {
+    plugins: [tailwindcss()],
     build: {
       cssMinify: 'lightningcss'
     }
+  },
+  prefetch: {
+    prefetchAll: false,
+    defaultStrategy: 'hover'
   }
 });

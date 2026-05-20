@@ -1,17 +1,97 @@
 ---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import ProductCard from '@/features/products/components/ProductCard.astro';
+import { getPublicProducts, getCategories } from '@/features/products/services/publicProducts';
 
+const [{ featured, regular }, categories] = await Promise.all([
+  getPublicProducts(),
+  getCategories()
+]);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="Catálogo de Corte y Grabado Láser">
+  
+  <section class="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[200px] md:min-h-[230px] text-center px-6 py-6 bg-gradient-to-br from-gold to-gold-dark rounded-3xl text-white mb-10 shadow-lg relative overflow-hidden">
+    <div class="relative z-10 w-full">
+      <span class="inline-block bg-white/20 text-white border border-white/30 px-4 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase mb-3 shadow-sm">
+        Catálogo General
+      </span>
+      
+      <h1 class="text-2xl md:text-4xl font-bold mb-2 font-serif tracking-wide drop-shadow-sm">
+        Arte y Precisión en MDF
+      </h1>
+      
+      <p class="text-sm md:text-base max-w-2xl mx-auto italic text-cream-100 leading-relaxed">
+        Cada pieza es diseñada y elaborada con dedicación para hacer tu evento inolvidable.
+      </p>
+
+      <div class="mt-4 pt-3 border-t border-white/20 max-w-xs mx-auto">
+        <p class="text-[10px] md:text-xs text-cream-100 font-medium uppercase tracking-wider">
+          Corte láser de alta calidad en Venezuela
+        </p>
+      </div>
+    </div>
+    
+    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 bg-white opacity-10 rounded-full blur-2xl"></div>
+  </section>
+
+  {categories.length > 0 && (
+    <section class="mb-10">
+      <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+        <a href="/" class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-gold bg-gold text-white shadow-sm transition-all">
+          Todos
+        </a>
+        {categories.map(cat => (
+          <a 
+            href={`/categoria/${cat.slug}`} 
+            class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark transition-all shadow-sm"
+          >
+            {cat.name}
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {featured.length > 0 && (
+    <section class="mb-14">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          ⭐ Productos Destacados
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {featured.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  {regular.length > 0 && (
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          🏷️ Nuestro Catálogo
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {regular.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  {featured.length === 0 && regular.length === 0 && (
+    <div class="text-center py-16 text-brand-muted">
+      <p class="text-lg italic">No hay productos disponibles en este momento.</p>
+    </div>
+  )}
+
+</BaseLayout>

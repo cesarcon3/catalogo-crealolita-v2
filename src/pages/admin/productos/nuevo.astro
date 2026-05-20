@@ -1,0 +1,28 @@
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { ProductForm } from '@/features/admin/components/ProductForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// Obtenemos las categorías disponibles para el selector del formulario
+const { data } = await supabase
+  .from('categories')
+  .select('*')
+  .order('name', { ascending: true });
+
+const categories = (data as Category[]) || [];
+---
+
+<AdminLayout title="Nuevo Producto">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/productos" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Crear Nuevo Producto</h1>
+    <p class="text-brand-muted mt-1">Ingresa las especificaciones y configuraciones de manufactura.</p>
+  </div>
+
+  <ProductForm categories={categories} client:load />
+</AdminLayout>

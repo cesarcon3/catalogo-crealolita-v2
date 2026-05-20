@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Evitamos que Google indexe el panel administrativo privado
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://creacioneslolita.com/sitemap.xml

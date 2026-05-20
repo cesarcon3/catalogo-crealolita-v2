@@ -1,0 +1,38 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { getButtonClasses, type ButtonVariant, type ButtonSize } from '@/ui/utils/buttonClasses';
+
+// FIX: Extendemos los atributos base pero añadimos soporte explícito para enlaces
+interface Props extends HTMLAttributes<'button'> {
+  href?: string;
+  target?: '_blank' | '_self' | '_parent' | '_top';
+  rel?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  fullWidth?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  target,
+  rel,
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const combinedClasses = getButtonClasses(variant, size, fullWidth, className);
+
+// Definimos si renderiza un enlace <a> o un botón <button>
+const Tag = href ? 'a' : 'button';
+
+// Seguridad: Si abre en una pestaña nueva, aplicamos protecciones de seguridad
+const secureRel = target === '_blank' ? (rel || 'noopener noreferrer') : rel;
+---
+
+<Tag href={href} target={target} rel={secureRel} class={combinedClasses} {...(href ? {} : rest)}>
+  <slot />
+</Tag>

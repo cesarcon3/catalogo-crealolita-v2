@@ -1,0 +1,71 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { SITE_CONFIG } from '@/core/constants/site';
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { 
+  title = SITE_CONFIG.name, 
+  description = SITE_CONFIG.description,
+  image
+} = Astro.props;
+
+const pageTitle = title === SITE_CONFIG.name ? title : `${title} | ${SITE_CONFIG.name}`;
+const canonicalURL = new URL(Astro.url.pathname, SITE_CONFIG.url);
+const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).toString();
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content={SITE_CONFIG.name} />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={pageTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+    
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen flex flex-col bg-cream-100 text-brand-text selection:bg-gold selection:text-white">
+    
+    <header class="bg-gradient-to-r from-gold to-gold-dark text-white py-4 shadow-md relative overflow-hidden">
+      <div class="container mx-auto px-4 flex justify-between items-center relative z-10">
+        <a href="/" class="flex items-center gap-3 text-2xl font-bold tracking-wider hover:opacity-90 transition-opacity">
+          <img src="/logo.webp" alt="Logo Creaciones Lolita" class="h-10 w-auto drop-shadow-sm" />
+          <span class="sr-only">Creaciones Lolita</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <footer class="bg-cream-200 border-t-2 border-gold py-8 mt-12">
+      <div class="container mx-auto px-4 text-center text-brand-muted">
+        <p>&copy; {new Date().getFullYear()} {SITE_CONFIG.name}. Todos los derechos reservados.</p>
+        <p class="mt-2 text-sm italic">Productos artesanales con amor 💛</p>
+      </div>
+    </footer>
+    
+  </body>
+</html>

@@ -1,0 +1,14 @@
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { CategoryForm } from '@/features/admin/components/CategoryForm';
+---
+
+<AdminLayout title="Nueva Categoría">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/categorias" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Crear Categoría</h1>
+  </div>
+  <CategoryForm client:load />
+</AdminLayout>
