@@ -719,82 +719,6 @@ export const DynamicListInput: React.FC<DynamicListInputProps> = ({
 };
 </file>
 
-<file path="src/features/admin/components/ImageUploader.tsx">
-import React, { type ChangeEvent } from 'react';
-import type { ExistingImage } from './ProductForm';
-
-interface ImageUploaderProps {
-  existingImages: ExistingImage[];
-  onRemoveExisting: (path: string) => void;
-  previewUrls: string[];
-  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onRemoveNewFile: (index: number) => void;
-}
-
-export const ImageUploader: React.FC<ImageUploaderProps> = ({
-  existingImages,
-  onRemoveExisting,
-  previewUrls,
-  onFileChange,
-  onRemoveNewFile
-}) => {
-  return (
-    <div className="p-6 bg-cream-100 rounded-xl border-2 border-dashed border-gold-light">
-      <label className="block text-lg font-bold text-gold-dark mb-4">Fotografías del Producto</label>
-      
-      {existingImages.length > 0 && (
-        <div className="mb-6">
-          <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes actuales:</span>
-          <div className="flex gap-4 overflow-x-auto py-2">
-            {existingImages.map((img) => (
-              <div key={img.id} className="relative w-32 h-32 flex-shrink-0 group">
-                <img src={img.url} alt="Existente" className="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm" />
-                <button
-                  type="button"
-                  onClick={() => onRemoveExisting(img.path)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                  title="Eliminar imagen actual"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={onFileChange}
-        className="w-full text-sm text-brand-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold file:text-white hover:file:bg-gold-dark transition-colors cursor-pointer"
-      />
-      
-      {previewUrls.length > 0 && (
-        <div className="mt-6 border-t border-brand-border pt-4">
-          <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes nuevas a subir:</span>
-          <div className="flex gap-4 overflow-x-auto py-2">
-            {previewUrls.map((url, idx) => (
-              <div key={idx} className="relative w-32 h-32 flex-shrink-0 group">
-                <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover rounded-lg border-2 border-green-400 shadow-sm" />
-                <button
-                  type="button"
-                  onClick={() => onRemoveNewFile(idx)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-</file>
-
 <file path="src/features/admin/components/LoginForm.astro">
 ---
 import Button from '@/ui/components/Button.astro';
@@ -847,486 +771,6 @@ const { errorMessage = '', defaultEmail = '' } = Astro.props;
 
     <Button type="submit" variant="primary" fullWidth>Ingresar al Sistema</Button>
   </form>
-</div>
-</file>
-
-<file path="src/features/admin/components/ProductForm.tsx">
-import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
-import type { Category, SaleType } from '@/core/types/database';
-import { Button } from '@/ui/components/Button';
-import { DynamicListInput } from './DynamicListInput';
-import { ImageUploader } from './ImageUploader';
-import { navigate } from 'astro:transitions/client';
-import { generateSlug } from '@/core/utils/slug';
-import { ConfirmModal } from '@/ui/components/ConfirmModal';
-
-export interface ExistingImage {
-  id: string;
-  url: string;
-  path: string;
-  is_primary: boolean;
-}
-
-export interface InitialProductData {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  price: string;
-  categoryId: string;
-  saleType: SaleType;
-  productionTime: string;
-  isActive: boolean;
-  isFeatured: boolean;
-  features: string[];
-  customizations: string[];
-  existingImages: ExistingImage[];
-}
-
-interface ProductFormProps {
-  categories: Category[];
-  initialData?: InitialProductData;
-}
-
-export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) => {
-  const isEdit = !!initialData;
-
-  const [name, setName] = useState<string>(initialData?.name || '');
-  const [slug, setSlug] = useState<string>(initialData?.slug || '');
-  const [description, setDescription] = useState<string>(initialData?.description || '');
-  const [price, setPrice] = useState<string>(initialData?.price || '');
-  const [categoryId, setCategoryId] = useState<string>(initialData?.categoryId || '');
-  const [saleType, setSaleType] = useState<SaleType>(initialData?.saleType || 'docena');
-  const [productionTime, setProductionTime] = useState<string>(initialData?.productionTime || '');
-  const [isActive, setIsActive] = useState<boolean>(initialData?.isActive ?? true);
-  const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
-
-  const [features, setFeatures] = useState<{id: string, value: string}[]>(
-    (initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f }))
-  );
-  const [customizations, setCustomizations] = useState<{id: string, value: string}[]>(
-    (initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c }))
-  );
-
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-
-  const [existingImages, setExistingImages] = useState<ExistingImage[]>(initialData?.existingImages || []);
-  const [deletedExistingImagePaths, setDeletedExistingImagePaths] = useState<string[]>([]);
-
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach(url => {
-        try { URL.revokeObjectURL(url); } catch { /* silenciar */ }
-      });
-    };
-  }, [previewUrls]);
-
-  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setName(value);
-    if (!isEdit) {
-      setSlug(generateSlug(value));
-    }
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...filesArray]);
-      const newPreviews = filesArray.map(file => URL.createObjectURL(file));
-      setPreviewUrls(prev => [...prev, ...newPreviews]);
-    }
-  };
-
-  const removeNewFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => {
-      const newUrls = [...prev];
-      if (newUrls[index]) URL.revokeObjectURL(newUrls[index]);
-      newUrls.splice(index, 1);
-      return newUrls;
-    });
-  };
-
-  const removeExistingImage = (path: string) => {
-    setExistingImages(prev => prev.filter(img => img.path !== path));
-    setDeletedExistingImagePaths(prev => [...prev, path]);
-  };
-
-  const confirmDeleteProduct = async () => {
-    if (!initialData) return;
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/products/${initialData.id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Error al eliminar');
-      navigate('/admin/productos');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al eliminar el producto');
-      setLoading(false);
-      setIsDeleteModalOpen(false);
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('slug', slug);
-    formData.append('description', description);
-    formData.append('price', price);
-    if (categoryId) formData.append('category_id', categoryId);
-    formData.append('sale_type', saleType);
-    formData.append('production_time', productionTime);
-    formData.append('is_active', String(isActive));
-    formData.append('is_featured', String(isFeatured));
-    
-    formData.append('features', JSON.stringify(features.map(f => f.value)));
-    formData.append('customization_options', JSON.stringify(customizations.map(c => c.value)));
-
-    if (isEdit && deletedExistingImagePaths.length > 0) {
-      formData.append('deleted_images', JSON.stringify(deletedExistingImagePaths));
-    }
-
-    selectedFiles.forEach(file => formData.append('images', file));
-
-    try {
-      const url = isEdit ? `/api/products/${initialData.id}` : '/api/products';
-      const method = isEdit ? 'PUT' : 'POST';
-
-      const response = await fetch(url, { method, body: formData });
-      const result = await response.json();
-
-      if (!response.ok) throw new Error(result.error || 'Error al guardar');
-      
-      previewUrls.forEach(url => {
-        try { URL.revokeObjectURL(url); } catch { /* silenciar */ }
-      });
-      navigate('/admin/productos');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl border border-brand-border shadow-sm">
-      {error && (
-        <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium text-center">
-          {error}
-        </div>
-      )}
-
-      <ImageUploader 
-        existingImages={existingImages}
-        onRemoveExisting={removeExistingImage}
-        previewUrls={previewUrls}
-        onFileChange={handleFileChange}
-        onRemoveNewFile={removeNewFile}
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="product-name" className="block text-sm font-semibold text-brand-text mb-2">Nombre del Producto *</label>
-          <input
-            id="product-name"
-            type="text"
-            required
-            value={name}
-            onChange={handleNameChange}
-            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="product-slug" className="block text-sm font-semibold text-brand-text mb-2">URL Slug *</label>
-          <input
-            id="product-slug"
-            type="text"
-            required
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            disabled={isEdit}
-            className={`w-full px-4 py-2 border border-brand-border rounded-lg outline-none font-mono text-sm ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-cream-200 text-brand-muted'}`}
-            title={isEdit ? "No se puede editar el slug" : ""}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="product-description" className="block text-sm font-semibold text-brand-text mb-2">Descripción</label>
-        <textarea
-          id="product-description"
-          rows={3}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label htmlFor="product-price" className="block text-sm font-semibold text-brand-text mb-2">Precio base (USD) *</label>
-          <input
-            id="product-price"
-            type="number"
-            step="0.01"
-            required
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="product-category" className="block text-sm font-semibold text-brand-text mb-2">Categoría</label>
-          <select
-            id="product-category"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-          >
-            <option value="">Selecciona...</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="product-saletype" className="block text-sm font-semibold text-brand-text mb-2">Modalidad de Venta</label>
-          <select
-            id="product-saletype"
-            value={saleType}
-            onChange={(e) => setSaleType(e.target.value as SaleType)}
-            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-          >
-            <option value="docena">Solo por Docena</option>
-            <option value="unidad">Solo por Unidad</option>
-            <option value="mixto">Mixto (Docena y Unidad)</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <DynamicListInput 
-          label="Características"
-          placeholder="Ej. MDF de alta calidad 3mm"
-          items={features}
-          onAdd={(val) => setFeatures([...features, { id: crypto.randomUUID(), value: val }])}
-          onRemove={(id) => setFeatures(features.filter((f) => f.id !== id))}
-        />
-
-        <DynamicListInput 
-          label="Personalización"
-          placeholder="Ej. Nombre de la Quinceañera"
-          items={customizations}
-          onAdd={(val) => setCustomizations([...customizations, { id: crypto.randomUUID(), value: val }])}
-          onRemove={(id) => setCustomizations(customizations.filter((c) => c.id !== id))}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center pt-4 border-t border-brand-border">
-        <div>
-          <label htmlFor="product-production" className="block text-sm font-semibold text-brand-text mb-2">Tiempo estimado de producción</label>
-          <input
-            id="product-production"
-            type="text"
-            value={productionTime}
-            onChange={(e) => setProductionTime(e.target.value)}
-            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-          />
-        </div>
-
-        <div className="flex items-center space-x-3 mt-6">
-          <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 accent-gold cursor-pointer" />
-          <label htmlFor="isActive" className="text-sm font-semibold text-brand-text cursor-pointer">Visible públicamente</label>
-        </div>
-
-        <div className="flex items-center space-x-3 mt-6">
-          <input type="checkbox" id="isFeatured" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-5 h-5 accent-gold cursor-pointer" />
-          <label htmlFor="isFeatured" className="text-sm font-semibold text-brand-text cursor-pointer">Destacar en Inicio (★)</label>
-        </div>
-      </div>
-
-      <div className="pt-4 flex justify-between gap-4 border-t border-brand-border mt-6">
-        <div>
-          {isEdit && (
-            <Button type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} disabled={loading}>
-              Borrar Producto
-            </Button>
-          )}
-        </div>
-        <div className="flex gap-4">
-          <Button href="/admin/productos" variant="neutral">Cancelar</Button>
-          <Button type="submit" variant="primary" disabled={loading}>
-            {loading ? 'Guardando...' : (isEdit ? 'Actualizar Producto' : 'Crear Producto')}
-          </Button>
-        </div>
-      </div>
-
-      <ConfirmModal 
-        isOpen={isDeleteModalOpen}
-        title="Eliminar Producto"
-        message="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer y borrará permanentemente sus imágenes asociadas."
-        onConfirm={confirmDeleteProduct}
-        onCancel={() => setIsDeleteModalOpen(false)}
-        isLoading={loading}
-      />
-    </form>
-  );
-};
-</file>
-
-<file path="src/features/admin/components/ProductList.astro">
----
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import Button from '@/ui/components/Button.astro';
-
-const supabase = createSupabaseServerClient(Astro.cookies);
-
-const { data: rawProducts, error } = await supabase
-  .from('products')
-  .select(`
-    *, 
-    categories(name),
-    product_images(storage_path, is_primary)
-  `)
-  .order('created_at', { ascending: false });
-
-const products = (rawProducts || []).map((product) => {
-  const images = product.product_images || [];
-  const primaryImage = images.find((img) => img.is_primary) || images[0];
-  
-  let thumbnailUrl = null;
-  if (primaryImage) {
-    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(primaryImage.storage_path);
-    thumbnailUrl = urlData.publicUrl;
-  }
-
-  const categoryData = product.categories;
-  const categoryName = Array.isArray(categoryData) ? categoryData[0]?.name : categoryData?.name;
-
-  return {
-    ...product,
-    categoryName,
-    thumbnailUrl,
-    imageCount: images.length
-  };
-});
----
-
-<div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
-  <div class="p-6 border-b border-brand-border flex justify-between items-center bg-cream-100/50">
-    <div>
-      <h2 class="text-xl font-bold text-brand-text">Catálogo de Productos</h2>
-      <p class="text-sm text-brand-muted mt-1">Gestiona los artículos, precios, disponibilidad y fotografías.</p>
-    </div>
-    <Button href="/admin/productos/nuevo" variant="primary" size="sm">
-      + Nuevo Producto
-    </Button>
-  </div>
-
-  {error && (
-    <div class="p-4 bg-red-50 text-red-600 border-b border-red-100">
-      Error al cargar los productos: {error.message}
-    </div>
-  )}
-
-  <div class="overflow-x-auto">
-    <table class="w-full text-left border-collapse">
-      <thead>
-        <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
-          <th class="p-4 font-medium w-16 text-center">Foto</th>
-          <th class="p-4 font-medium">Producto</th>
-          <th class="p-4 font-medium">Categoría</th>
-          <th class="p-4 font-medium">Precio</th>
-          <th class="p-4 font-medium">Tipo Venta</th>
-          <th class="p-4 font-medium">Estado</th>
-          <th class="p-4 font-medium text-right">Acciones</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-brand-border">
-        {products.length === 0 ? (
-          <tr>
-            <td colspan="7" class="p-8 text-center text-brand-muted italic">
-              No hay productos registrados aún.
-            </td>
-          </tr>
-        ) : (
-          products.map((product) => (
-            <tr class="hover:bg-cream-50 transition-colors">
-              
-              <td class="p-4">
-                {product.thumbnailUrl ? (
-                  <div class="relative w-12 h-12 flex-shrink-0">
-                    <img 
-                      src={product.thumbnailUrl} 
-                      alt={`Miniatura de ${product.name}`} 
-                      class="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm"
-                      loading="lazy"
-                    />
-                    {product.imageCount > 1 && (
-                      <span class="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white" title={`${product.imageCount} imágenes en total`}>
-                        {product.imageCount}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div class="w-12 h-12 rounded-lg bg-cream-200 border-2 border-brand-border border-dashed flex items-center justify-center text-brand-muted shadow-sm" title="Producto sin fotografías">
-                    <span class="text-lg opacity-50">📷</span>
-                  </div>
-                )}
-              </td>
-
-              <td class="p-4">
-                <div class="flex items-center gap-2 mb-1">
-                  <p class="font-semibold text-brand-text line-clamp-1" title={product.name}>{product.name}</p>
-                  {product.is_featured && (
-                    <span class="px-2 py-0.5 bg-pink-50 text-pink-600 border border-pink-200 text-[10px] font-bold rounded-full whitespace-nowrap shadow-sm" title="Destacado en la página de inicio">
-                      ⭐ Destacado
-                    </span>
-                  )}
-                </div>
-                <p class="text-xs text-brand-muted">{product.slug}</p>
-              </td>
-
-              <td class="p-4 text-sm text-brand-muted whitespace-nowrap">
-                {product.categoryName || 'Sin categoría'}
-              </td>
-              <td class="p-4 font-medium whitespace-nowrap">
-                {product.currency} {product.price.toFixed(2)}
-              </td>
-              <td class="p-4">
-                <span class="px-2.5 py-1 bg-cream-200 text-brand-muted text-xs rounded-full capitalize whitespace-nowrap">
-                  {product.sale_type}
-                </span>
-              </td>
-              <td class="p-4">
-                <span class={`px-2.5 py-1 text-xs rounded-full whitespace-nowrap ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {product.is_active ? 'Activo' : 'Inactivo'}
-                </span>
-              </td>
-              <td class="p-4 text-right">
-                <a href={`/admin/productos/editar/${product.id}`} class="text-gold hover:text-gold-dark font-medium text-sm whitespace-nowrap">
-                  Editar
-                </a>
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </div>
 </div>
 </file>
 
@@ -1835,66 +1279,6 @@ if (error || !categoryData) return Astro.redirect('/admin/categorias');
     <h1 class="text-3xl font-bold text-gold-dark">Editar Categoría</h1>
   </div>
   <CategoryForm initialData={categoryData as Category} client:load />
-</AdminLayout>
-</file>
-
-<file path="src/pages/admin/categorias/index.astro">
----
-import AdminLayout from '@/ui/layouts/AdminLayout.astro';
-import Button from '@/ui/components/Button.astro';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import type { Category } from '@/core/types/database';
-
-const supabase = createSupabaseServerClient(Astro.cookies);
-const { data, error } = await supabase.from('categories').select('*').order('name');
-const categories = (data as Category[]) || [];
----
-
-<AdminLayout title="Categorías">
-  <div class="mb-8 flex justify-between items-center pb-4 border-b border-brand-border">
-    <div>
-      <h1 class="text-3xl font-bold text-gold-dark">Categorías</h1>
-      <p class="text-brand-muted mt-1">Organiza la taxonomía de tus productos.</p>
-    </div>
-    <Button href="/admin/categorias/nuevo" variant="primary" size="sm">+ Nueva Categoría</Button>
-  </div>
-
-  <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
-    {error && (
-  <div class="p-4 bg-red-50 text-red-600">
-    {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error: ${error.message}`}
-  </div>
-)}
-    
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
-            <th class="p-4 font-medium">Nombre</th>
-            <th class="p-4 font-medium">Slug (URL)</th>
-            <th class="p-4 font-medium">Descripción</th>
-            <th class="p-4 font-medium text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-brand-border">
-          {categories.length === 0 ? (
-            <tr><td colspan="4" class="p-8 text-center text-brand-muted italic">No hay categorías registradas.</td></tr>
-          ) : (
-            categories.map((cat) => (
-              <tr class="hover:bg-cream-50 transition-colors">
-                <td class="p-4 font-semibold text-brand-text">{cat.name}</td>
-                <td class="p-4 text-sm text-brand-muted font-mono">{cat.slug}</td>
-                <td class="p-4 text-sm text-brand-muted truncate max-w-xs">{cat.description || '-'}</td>
-                <td class="p-4 text-right">
-                  <a href={`/admin/categorias/editar/${cat.id}`} class="text-gold hover:text-gold-dark font-medium text-sm">Editar</a>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </AdminLayout>
 </file>
 
@@ -2623,106 +2007,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 };
 </file>
 
-<file path="src/pages/categoria/[slug].astro">
----
-import BaseLayout from '@/ui/layouts/BaseLayout.astro';
-import ProductCard from '@/features/products/components/ProductCard.astro';
-import { getCategories, getProductsByCategory } from '@/features/products/services/publicProducts';
-
-const { slug } = Astro.params;
-
-if (!slug) {
-  return Astro.redirect('/404');
-}
-
-const categories = await getCategories();
-const currentCategory = categories.find(c => c.slug === slug);
-
-if (!currentCategory) {
-  return Astro.redirect('/404');
-}
-
-const products = await getProductsByCategory(slug);
-
-const layoutProps = {
-  title: currentCategory.name,
-  ...(currentCategory.description ? { description: currentCategory.description } : {})
-};
----
-
-<BaseLayout {...layoutProps}>
-  
-  <section class="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[200px] md:min-h-[230px] text-center px-6 py-6 bg-gradient-to-br from-gold to-gold-dark rounded-3xl text-white mb-10 shadow-lg relative overflow-hidden">
-    <div class="relative z-10 w-full">
-      <span class="inline-block bg-white/20 text-white border border-white/30 px-4 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase mb-3 shadow-sm">
-        Colección Exclusiva
-      </span>
-      
-      <h1 class="text-2xl md:text-4xl font-bold mb-2 font-serif tracking-wide drop-shadow-sm">
-        {currentCategory.name}
-      </h1>
-      
-      <p class="text-sm md:text-base max-w-2xl mx-auto italic text-cream-100 leading-relaxed">
-        {currentCategory.description || 'Explora nuestra selección de diseños exclusivos y personalizados.'}
-      </p>
-
-      <div class="mt-4 pt-3 border-t border-white/20 max-w-xs mx-auto">
-        <p class="text-[10px] md:text-xs text-cream-100 font-medium uppercase tracking-wider">
-          {products.length} {products.length === 1 ? 'diseño disponible' : 'diseños disponibles'}
-        </p>
-      </div>
-    </div>
-    
-    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
-    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 bg-white opacity-10 rounded-full blur-2xl"></div>
-  </section>
-
-  <section class="mb-10">
-    <div class="flex flex-wrap justify-center gap-2 md:gap-3">
-      <a href="/" class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark transition-all shadow-sm">
-        Todos
-      </a>
-      {categories.map(cat => (
-        <a 
-          href={`/categoria/${cat.slug}`} 
-          class={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all shadow-sm ${
-            cat.slug === slug 
-              ? 'border-gold bg-gold text-white' 
-              : 'border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark'
-          }`}
-        >
-          {cat.name}
-        </a>
-      ))}
-    </div>
-  </section>
-
-  {products.length > 0 ? (
-    <section class="mb-16">
-      <div class="text-center mb-8">
-        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
-          Diseños Disponibles
-          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
-        </h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map(product => (
-          <ProductCard product={product} />
-        ))}
-      </div>
-    </section>
-  ) : (
-    <div class="text-center py-16 bg-cream-100 rounded-2xl border border-brand-border mb-16 shadow-sm">
-      <span class="text-4xl mb-3 block">🛠️</span>
-      <h3 class="text-xl font-bold text-brand-text mb-2">Próximamente</h3>
-      <p class="text-brand-muted text-sm">Aún estamos preparando diseños para esta categoría.</p>
-    </div>
-  )}
-
-</BaseLayout>
-</file>
-
 <file path="src/pages/producto/[slug].astro">
 ---
 import BaseLayout from '@/ui/layouts/BaseLayout.astro';
@@ -2871,76 +2155,6 @@ const layoutProps = {
     </div>
   </div>
 </BaseLayout>
-</file>
-
-<file path="src/pages/sitemap.xml.ts">
-import type { APIRoute } from 'astro';
-import { supabase } from '../lib/supabase';
-import { SITE_CONFIG } from '@/core/constants/site';
-
-interface SitemapCategory {
-  slug: string;
-}
-
-interface SitemapProduct {
-  slug: string;
-  updated_at: string | null;
-}
-
-const escapeXml = (unsafe: string) => {
-  return unsafe.replace(/[<>&'"]/g, (c) => {
-    switch (c) {
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '&': return '&amp;';
-      case '\'': return '&apos;';
-      case '"': return '&quot;';
-      default: return c;
-    }
-  });
-};
-
-export const GET: APIRoute = async () => {
-  const [productsRes, categoriesRes] = await Promise.all([
-    supabase.from('products').select('slug, updated_at').eq('is_active', true),
-    supabase.from('categories').select('slug')
-  ]);
-
-  const products = productsRes.data || [];
-  const categories = categoriesRes.data || [];
-
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      <url>
-        <loc>${SITE_CONFIG.url}/</loc>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-      </url>
-      ${categories.map((cat: SitemapCategory) => `
-        <url>
-          <loc>${SITE_CONFIG.url}/categoria/${escapeXml(cat.slug)}</loc>
-          <changefreq>weekly</changefreq>
-          <priority>0.8</priority>
-        </url>
-      `).join('')}
-      ${products.map((prod: SitemapProduct) => `
-        <url>
-          <loc>${SITE_CONFIG.url}/producto/${escapeXml(prod.slug)}</loc>
-          <lastmod>${prod.updated_at ? new Date(prod.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>
-          <changefreq>monthly</changefreq>
-          <priority>0.7</priority>
-        </url>
-      `).join('')}
-    </urlset>
-  `.trim();
-
-  return new Response(sitemap, {
-    headers: {
-      'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=86400' 
-    }
-  });
-};
 </file>
 
 <file path="src/ui/components/Button.astro">
@@ -3351,73 +2565,739 @@ declare namespace App {
 }
 </file>
 
-<file path="src/middleware.ts">
-import { defineMiddleware } from 'astro:middleware';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+<file path="src/features/admin/components/ImageUploader.tsx">
+import React, { type ChangeEvent } from 'react';
+import type { ExistingImage } from './ProductForm';
 
-function generateNonce(): string {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array));
+interface PreviewItem {
+  id: string;
+  url: string;
 }
 
-export const onRequest = defineMiddleware(async ({ cookies, url, request, redirect, locals }, next) => {
-  const isApiMutation = url.pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
-  const isLoginPage = url.pathname === '/admin/login';
+interface ImageUploaderProps {
+  existingImages: ExistingImage[];
+  onRemoveExisting: (path: string) => void;
+  previews: PreviewItem[];
+  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onRemoveNewFile: (index: number) => void;
+}
 
-  if (url.pathname.startsWith('/admin') || isApiMutation) {
-    const supabase = createSupabaseServerClient(cookies);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+export const ImageUploader: React.FC<ImageUploaderProps> = ({
+  existingImages,
+  onRemoveExisting,
+  previews,
+  onFileChange,
+  onRemoveNewFile
+}) => {
+  return (
+    <div className="p-6 bg-cream-100 rounded-xl border-2 border-dashed border-gold-light">
+      <label className="block text-lg font-bold text-gold-dark mb-4">Fotografías del Producto</label>
+      
+      {existingImages.length > 0 && (
+        <div className="mb-6">
+          <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes actuales:</span>
+          <div className="flex gap-4 overflow-x-auto py-2">
+            {existingImages.map((img) => (
+              <div key={img.id} className="relative w-32 h-32 flex-shrink-0 group">
+                <img src={img.url} alt="Existente" className="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm" />
+                <button
+                  type="button"
+                  onClick={() => onRemoveExisting(img.path)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  title="Eliminar imagen actual"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-    if (authError || !user) {
-      if (isApiMutation) {
-        return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-      }
-      if (!isLoginPage) {
-        return redirect('/admin/login');
-      }
-    }
-
-    if (user && isLoginPage) {
-      return redirect('/admin');
-    }
-
-    if (user && typeof user.email === 'string') {
-      locals.userEmail = user.email;
-    }
-  }
-
-  const nonce = generateNonce();
-  locals.cspNonce = nonce;
-
-  const response = await next();
-  
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
-  
-  const supabaseHost = new URL(import.meta.env.PUBLIC_SUPABASE_URL).hostname;
-  
-  response.headers.set(
-    'Content-Security-Policy',
-    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://${supabaseHost}; connect-src 'self' https://${supabaseHost};`
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={onFileChange}
+        className="w-full text-sm text-brand-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold file:text-white hover:file:bg-gold-dark transition-colors cursor-pointer"
+      />
+      
+      {previews.length > 0 && (
+        <div className="mt-6 border-t border-brand-border pt-4">
+          <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes nuevas a subir:</span>
+          <div className="flex gap-4 overflow-x-auto py-2">
+            {previews.map((preview, idx) => (
+              <div key={preview.id} className="relative w-32 h-32 flex-shrink-0 group">
+                <img src={preview.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded-lg border-2 border-green-400 shadow-sm" />
+                <button
+                  type="button"
+                  onClick={() => onRemoveNewFile(idx)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
-  
-  if (import.meta.env.PROD) {
-    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
-  }
+};
+</file>
 
-  if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
-  response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-} else if (url.pathname.startsWith('/admin')) {
-  // Las páginas admin NUNCA deben cachearse
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  response.headers.set('Pragma', 'no-cache'); // compatibilidad HTTP/1.0
+<file path="src/features/admin/components/ProductForm.tsx">
+import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import type { Category, SaleType } from '@/core/types/database';
+import { Button } from '@/ui/components/Button';
+import { DynamicListInput } from './DynamicListInput';
+import { ImageUploader } from './ImageUploader';
+import { navigate } from 'astro:transitions/client';
+import { generateSlug } from '@/core/utils/slug';
+import { ConfirmModal } from '@/ui/components/ConfirmModal';
+
+export interface ExistingImage {
+  id: string;
+  url: string;
+  path: string;
+  is_primary: boolean;
 }
 
-  return response;
+export interface InitialProductData {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: string;
+  categoryId: string;
+  saleType: SaleType;
+  productionTime: string;
+  isActive: boolean;
+  isFeatured: boolean;
+  features: string[];
+  customizations: string[];
+  existingImages: ExistingImage[];
+}
+
+interface ProductFormProps {
+  categories: Category[];
+  initialData?: InitialProductData;
+}
+
+interface PreviewItem {
+  id: string;
+  url: string;
+}
+
+export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) => {
+  const isEdit = !!initialData;
+
+  const [name, setName] = useState<string>(initialData?.name || '');
+  const [slug, setSlug] = useState<string>(initialData?.slug || '');
+  const [description, setDescription] = useState<string>(initialData?.description || '');
+  const [price, setPrice] = useState<string>(initialData?.price || '');
+  const [categoryId, setCategoryId] = useState<string>(initialData?.categoryId || '');
+  const [saleType, setSaleType] = useState<SaleType>(initialData?.saleType || 'docena');
+  const [productionTime, setProductionTime] = useState<string>(initialData?.productionTime || '');
+  const [isActive, setIsActive] = useState<boolean>(initialData?.isActive ?? true);
+  const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
+
+  const [features, setFeatures] = useState<{id: string, value: string}[]>(
+    (initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f }))
+  );
+  const [customizations, setCustomizations] = useState<{id: string, value: string}[]>(
+    (initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c }))
+  );
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<PreviewItem[]>([]);
+
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>(initialData?.existingImages || []);
+  const [deletedExistingImagePaths, setDeletedExistingImagePaths] = useState<string[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      previews.forEach(p => {
+        try { URL.revokeObjectURL(p.url); } catch { /* silenciar */ }
+      });
+    };
+  }, [previews]);
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setName(value);
+    if (!isEdit) {
+      setSlug(generateSlug(value));
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...filesArray]);
+      const newPreviews = filesArray.map(file => ({
+        id: crypto.randomUUID(),
+        url: URL.createObjectURL(file)
+      }));
+      setPreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeNewFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => {
+      const newPreviews = [...prev];
+      if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index].url);
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
+  const removeExistingImage = (path: string) => {
+    setExistingImages(prev => prev.filter(img => img.path !== path));
+    setDeletedExistingImagePaths(prev => [...prev, path]);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!initialData) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/products/${initialData.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Error al eliminar');
+      navigate('/admin/productos');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar el producto');
+      setLoading(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('slug', slug);
+    formData.append('description', description);
+    formData.append('price', price);
+    if (categoryId) formData.append('category_id', categoryId);
+    formData.append('sale_type', saleType);
+    formData.append('production_time', productionTime);
+    formData.append('is_active', String(isActive));
+    formData.append('is_featured', String(isFeatured));
+    
+    formData.append('features', JSON.stringify(features.map(f => f.value)));
+    formData.append('customization_options', JSON.stringify(customizations.map(c => c.value)));
+
+    if (isEdit && deletedExistingImagePaths.length > 0) {
+      formData.append('deleted_images', JSON.stringify(deletedExistingImagePaths));
+    }
+
+    selectedFiles.forEach(file => formData.append('images', file));
+
+    try {
+      const url = isEdit ? `/api/products/${initialData.id}` : '/api/products';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(url, { method, body: formData });
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.error || 'Error al guardar');
+      
+      previews.forEach(p => {
+        try { URL.revokeObjectURL(p.url); } catch { /* silenciar */ }
+      });
+      navigate('/admin/productos');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl border border-brand-border shadow-sm">
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium text-center">
+          {error}
+        </div>
+      )}
+
+      <ImageUploader 
+        existingImages={existingImages}
+        onRemoveExisting={removeExistingImage}
+        previews={previews}
+        onFileChange={handleFileChange}
+        onRemoveNewFile={removeNewFile}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label htmlFor="product-name" className="block text-sm font-semibold text-brand-text mb-2">Nombre del Producto *</label>
+          <input
+            id="product-name"
+            type="text"
+            required
+            value={name}
+            onChange={handleNameChange}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="product-slug" className="block text-sm font-semibold text-brand-text mb-2">URL Slug *</label>
+          <input
+            id="product-slug"
+            type="text"
+            required
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            disabled={isEdit}
+            className={`w-full px-4 py-2 border border-brand-border rounded-lg outline-none font-mono text-sm ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-cream-200 text-brand-muted'}`}
+            title={isEdit ? "No se puede editar el slug" : ""}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="product-description" className="block text-sm font-semibold text-brand-text mb-2">Descripción</label>
+        <textarea
+          id="product-description"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label htmlFor="product-price" className="block text-sm font-semibold text-brand-text mb-2">Precio base (USD) *</label>
+          <input
+            id="product-price"
+            type="number"
+            step="0.01"
+            required
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="product-category" className="block text-sm font-semibold text-brand-text mb-2">Categoría</label>
+          <select
+            id="product-category"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          >
+            <option value="">Selecciona...</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="product-saletype" className="block text-sm font-semibold text-brand-text mb-2">Modalidad de Venta</label>
+          <select
+            id="product-saletype"
+            value={saleType}
+            onChange={(e) => setSaleType(e.target.value as SaleType)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          >
+            <option value="docena">Solo por Docena</option>
+            <option value="unidad">Solo por Unidad</option>
+            <option value="mixto">Mixto (Docena y Unidad)</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <DynamicListInput 
+          label="Características"
+          placeholder="Ej. MDF de alta calidad 3mm"
+          items={features}
+          onAdd={(val) => setFeatures([...features, { id: crypto.randomUUID(), value: val }])}
+          onRemove={(id) => setFeatures(features.filter((f) => f.id !== id))}
+        />
+
+        <DynamicListInput 
+          label="Personalización"
+          placeholder="Ej. Nombre de la Quinceañera"
+          items={customizations}
+          onAdd={(val) => setCustomizations([...customizations, { id: crypto.randomUUID(), value: val }])}
+          onRemove={(id) => setCustomizations(customizations.filter((c) => c.id !== id))}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center pt-4 border-t border-brand-border">
+        <div>
+          <label htmlFor="product-production" className="block text-sm font-semibold text-brand-text mb-2">Tiempo estimado de producción</label>
+          <input
+            id="product-production"
+            type="text"
+            value={productionTime}
+            onChange={(e) => setProductionTime(e.target.value)}
+            className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+          />
+        </div>
+
+        <div className="flex items-center space-x-3 mt-6">
+          <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 accent-gold cursor-pointer" />
+          <label htmlFor="isActive" className="text-sm font-semibold text-brand-text cursor-pointer">Visible públicamente</label>
+        </div>
+
+        <div className="flex items-center space-x-3 mt-6">
+          <input type="checkbox" id="isFeatured" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-5 h-5 accent-gold cursor-pointer" />
+          <label htmlFor="isFeatured" className="text-sm font-semibold text-brand-text cursor-pointer">Destacar en Inicio (★)</label>
+        </div>
+      </div>
+
+      <div className="pt-4 flex justify-between gap-4 border-t border-brand-border mt-6">
+        <div>
+          {isEdit && (
+            <Button type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} disabled={loading}>
+              Borrar Producto
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-4">
+          <Button href="/admin/productos" variant="neutral">Cancelar</Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Guardando...' : (isEdit ? 'Actualizar Producto' : 'Crear Producto')}
+          </Button>
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={isDeleteModalOpen}
+        title="Eliminar Producto"
+        message="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer y borrará permanentemente sus imágenes asociadas."
+        onConfirm={confirmDeleteProduct}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={loading}
+      />
+    </form>
+  );
+};
+</file>
+
+<file path="src/features/admin/components/ProductList.astro">
+---
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import Button from '@/ui/components/Button.astro';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+const { data: rawProducts, error } = await supabase
+  .from('products')
+  .select(`
+    *, 
+    categories(name),
+    product_images(storage_path, is_primary)
+  `)
+  .order('created_at', { ascending: false });
+
+const products = (rawProducts || []).map((product) => {
+  const images = product.product_images || [];
+  const primaryImage = images.find((img) => img.is_primary) || images[0];
+  
+  let thumbnailUrl = null;
+  if (primaryImage) {
+    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(primaryImage.storage_path);
+    thumbnailUrl = urlData.publicUrl;
+  }
+
+  const categoryData = product.categories;
+  const categoryName = Array.isArray(categoryData) ? categoryData[0]?.name : categoryData?.name;
+
+  return {
+    ...product,
+    categoryName,
+    thumbnailUrl,
+    imageCount: images.length
+  };
 });
+---
+
+<div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+  <div class="p-6 border-b border-brand-border flex justify-between items-center bg-cream-100/50">
+    <div>
+      <h2 class="text-xl font-bold text-brand-text">Catálogo de Productos</h2>
+      <p class="text-sm text-brand-muted mt-1">Gestiona los artículos, precios, disponibilidad y fotografías.</p>
+    </div>
+    <Button href="/admin/productos/nuevo" variant="primary" size="sm">
+      + Nuevo Producto
+    </Button>
+  </div>
+
+  {error && (
+    <div class="p-4 bg-red-50 text-red-600 border-b border-red-100">
+      {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error al cargar los productos: ${error.message}`}
+    </div>
+  )}
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
+          <th class="p-4 font-medium w-16 text-center">Foto</th>
+          <th class="p-4 font-medium">Producto</th>
+          <th class="p-4 font-medium">Categoría</th>
+          <th class="p-4 font-medium">Precio</th>
+          <th class="p-4 font-medium">Tipo Venta</th>
+          <th class="p-4 font-medium">Estado</th>
+          <th class="p-4 font-medium text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-brand-border">
+        {products.length === 0 ? (
+          <tr>
+            <td colspan="7" class="p-8 text-center text-brand-muted italic">
+              No hay productos registrados aún.
+            </td>
+          </tr>
+        ) : (
+          products.map((product) => (
+            <tr class="hover:bg-cream-50 transition-colors">
+              
+              <td class="p-4">
+                {product.thumbnailUrl ? (
+                  <div class="relative w-12 h-12 flex-shrink-0">
+                    <img 
+                      src={product.thumbnailUrl} 
+                      alt={`Miniatura de ${product.name}`} 
+                      class="w-full h-full object-cover rounded-lg border border-brand-border shadow-sm"
+                      loading="lazy"
+                    />
+                    {product.imageCount > 1 && (
+                      <span class="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white" title={`${product.imageCount} imágenes en total`}>
+                        {product.imageCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div class="w-12 h-12 rounded-lg bg-cream-200 border-2 border-brand-border border-dashed flex items-center justify-center text-brand-muted shadow-sm" title="Producto sin fotografías">
+                    <span class="text-lg opacity-50">📷</span>
+                  </div>
+                )}
+              </td>
+
+              <td class="p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <p class="font-semibold text-brand-text line-clamp-1" title={product.name}>{product.name}</p>
+                  {product.is_featured && (
+                    <span class="px-2 py-0.5 bg-pink-50 text-pink-600 border border-pink-200 text-[10px] font-bold rounded-full whitespace-nowrap shadow-sm" title="Destacado en la página de inicio">
+                      ⭐ Destacado
+                    </span>
+                  )}
+                </div>
+                <p class="text-xs text-brand-muted">{product.slug}</p>
+              </td>
+
+              <td class="p-4 text-sm text-brand-muted whitespace-nowrap">
+                {product.categoryName || 'Sin categoría'}
+              </td>
+              <td class="p-4 font-medium whitespace-nowrap">
+                {product.currency} {product.price.toFixed(2)}
+              </td>
+              <td class="p-4">
+                <span class="px-2.5 py-1 bg-cream-200 text-brand-muted text-xs rounded-full capitalize whitespace-nowrap">
+                  {product.sale_type}
+                </span>
+              </td>
+              <td class="p-4">
+                <span class={`px-2.5 py-1 text-xs rounded-full whitespace-nowrap ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {product.is_active ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
+              <td class="p-4 text-right">
+                <a href={`/admin/productos/editar/${product.id}`} class="text-gold hover:text-gold-dark font-medium text-sm whitespace-nowrap">
+                  Editar
+                </a>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+</file>
+
+<file path="src/pages/admin/categorias/index.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import Button from '@/ui/components/Button.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+const { data, error } = await supabase.from('categories').select('*').order('name');
+const categories = (data as Category[]) || [];
+---
+
+<AdminLayout title="Categorías">
+  <div class="mb-8 flex justify-between items-center pb-4 border-b border-brand-border">
+    <div>
+      <h1 class="text-3xl font-bold text-gold-dark">Categorías</h1>
+      <p class="text-brand-muted mt-1">Organiza la taxonomía de tus productos.</p>
+    </div>
+    <Button href="/admin/categorias/nuevo" variant="primary" size="sm">+ Nueva Categoría</Button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+    {error && (
+  <div class="p-4 bg-red-50 text-red-600">
+    {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error: ${error.message}`}
+  </div>
+)}
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
+            <th class="p-4 font-medium">Nombre</th>
+            <th class="p-4 font-medium">Slug (URL)</th>
+            <th class="p-4 font-medium">Descripción</th>
+            <th class="p-4 font-medium text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-brand-border">
+          {categories.length === 0 ? (
+            <tr><td colspan="4" class="p-8 text-center text-brand-muted italic">No hay categorías registradas.</td></tr>
+          ) : (
+            categories.map((cat) => (
+              <tr class="hover:bg-cream-50 transition-colors">
+                <td class="p-4 font-semibold text-brand-text">{cat.name}</td>
+                <td class="p-4 text-sm text-brand-muted font-mono">{cat.slug}</td>
+                <td class="p-4 text-sm text-brand-muted truncate max-w-xs">{cat.description || '-'}</td>
+                <td class="p-4 text-right">
+                  <a href={`/admin/categorias/editar/${cat.id}`} class="text-gold hover:text-gold-dark font-medium text-sm">Editar</a>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
+</file>
+
+<file path="src/pages/categoria/[slug].astro">
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import ProductCard from '@/features/products/components/ProductCard.astro';
+import { getCategories, getProductsByCategory } from '@/features/products/services/publicProducts';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const categories = await getCategories();
+const currentCategory = categories.find(c => c.slug === slug);
+
+if (!currentCategory) {
+  return Astro.redirect('/404');
+}
+
+const products = await getProductsByCategory(slug);
+
+const layoutProps = {
+  title: currentCategory.name,
+  ...(currentCategory.description ? { description: currentCategory.description } : {})
+};
+---
+
+<BaseLayout {...layoutProps}>
+  
+  <section class="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[200px] md:min-h-[230px] text-center px-6 py-6 bg-gradient-to-br from-gold to-gold-dark rounded-3xl text-white mb-10 shadow-lg relative overflow-hidden">
+    <div class="relative z-10 w-full">
+      <span class="inline-block bg-white/20 text-white border border-white/30 px-4 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase mb-3 shadow-sm">
+        Colección Exclusiva
+      </span>
+      
+      <h1 class="text-2xl md:text-4xl font-bold mb-2 font-serif tracking-wide drop-shadow-sm">
+        {currentCategory.name}
+      </h1>
+      
+      <p class="text-sm md:text-base max-w-2xl mx-auto italic text-cream-100 leading-relaxed">
+        {currentCategory.description || 'Explora nuestra selección de diseños exclusivos y personalizados.'}
+      </p>
+
+      <div class="mt-4 pt-3 border-t border-white/20 max-w-xs mx-auto">
+        <p class="text-[10px] md:text-xs text-cream-100 font-medium uppercase tracking-wider">
+          {products.length} {products.length === 1 ? 'diseño disponible' : 'diseños disponibles'}
+        </p>
+      </div>
+    </div>
+    
+    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 bg-white opacity-10 rounded-full blur-2xl"></div>
+  </section>
+
+  <section class="mb-10">
+    <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+      <a href="/" class="px-5 py-2 rounded-full text-sm font-semibold border-2 border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark transition-all shadow-sm">
+        Todos
+      </a>
+      {categories.map(cat => (
+        <a 
+          href={`/categoria/${cat.slug}`} 
+          class={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all shadow-sm ${
+            cat.slug === slug 
+              ? 'border-gold bg-gold text-white' 
+              : 'border-brand-border bg-white text-brand-muted hover:border-gold hover:text-gold-dark'
+          }`}
+        >
+          {cat.name}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {products.length > 0 ? (
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-brand-text font-serif relative inline-block">
+          Diseños Disponibles
+          <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gold rounded-full"></span>
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+
+      {products.length === 48 && (
+        <p class="text-center text-sm text-brand-muted mt-8">
+          Mostrando los primeros 48 diseños. Contáctanos para ver más opciones.
+        </p>
+      )}
+    </section>
+  ) : (
+    <div class="text-center py-16 bg-cream-100 rounded-2xl border border-brand-border mb-16 shadow-sm">
+      <span class="text-4xl mb-3 block">🛠️</span>
+      <h3 class="text-xl font-bold text-brand-text mb-2">Próximamente</h3>
+      <p class="text-brand-muted text-sm">Aún estamos preparando diseños para esta categoría.</p>
+    </div>
+  )}
+
+</BaseLayout>
 </file>
 
 <file path="src/pages/index.astro">
@@ -3520,6 +3400,76 @@ const [{ featured, regular }, categories] = await Promise.all([
 </BaseLayout>
 </file>
 
+<file path="src/pages/sitemap.xml.ts">
+import type { APIRoute } from 'astro';
+import { supabase } from '@/lib/supabase';
+import { SITE_CONFIG } from '@/core/constants/site';
+
+interface SitemapCategory {
+  slug: string;
+}
+
+interface SitemapProduct {
+  slug: string;
+  updated_at: string | null;
+}
+
+const escapeXml = (unsafe: string) => {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case "'": return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+};
+
+export const GET: APIRoute = async () => {
+  const [productsRes, categoriesRes] = await Promise.all([
+    supabase.from('products').select('slug, updated_at').eq('is_active', true),
+    supabase.from('categories').select('slug')
+  ]);
+
+  const products = productsRes.data || [];
+  const categories = categoriesRes.data || [];
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>${SITE_CONFIG.url}/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+      ${categories.map((cat: SitemapCategory) => `
+        <url>
+          <loc>${SITE_CONFIG.url}/categoria/${escapeXml(cat.slug)}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `).join('')}
+      ${products.map((prod: SitemapProduct) => `
+        <url>
+          <loc>${SITE_CONFIG.url}/producto/${escapeXml(prod.slug)}</loc>
+          <lastmod>${prod.updated_at ? new Date(prod.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>
+          <changefreq>monthly</changefreq>
+          <priority>0.7</priority>
+        </url>
+      `).join('')}
+    </urlset>
+  `.trim();
+
+  return new Response(sitemap, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  });
+};
+</file>
+
 <file path="src/styles/global.css">
 @import "tailwindcss";
 
@@ -3563,6 +3513,75 @@ const [{ featured, regular }, categories] = await Promise.all([
 ::view-transition-new(root) {
   animation-duration: 0.3s;
 }
+</file>
+
+<file path="src/middleware.ts">
+import { defineMiddleware } from 'astro:middleware';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+function generateNonce(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array));
+}
+
+export const onRequest = defineMiddleware(async ({ cookies, url, request, redirect, locals }, next) => {
+  const isApiMutation = url.pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
+  const isLoginPage = url.pathname === '/admin/login';
+
+  if (url.pathname.startsWith('/admin') || isApiMutation) {
+    const supabase = createSupabaseServerClient(cookies);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      if (isApiMutation) {
+        return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+      }
+      if (!isLoginPage) {
+        return redirect('/admin/login');
+      }
+    }
+
+    if (user && isLoginPage) {
+      return redirect('/admin');
+    }
+
+    if (user && typeof user.email === 'string') {
+      locals.userEmail = user.email;
+    }
+  }
+
+  const nonce = generateNonce();
+  locals.cspNonce = nonce;
+
+  const response = await next();
+  
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
+  
+  const supabaseHost = new URL(import.meta.env.PUBLIC_SUPABASE_URL).hostname;
+  
+  response.headers.set(
+    'Content-Security-Policy',
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://${supabaseHost}; connect-src 'self' https://${supabaseHost};`
+  );
+  
+  if (import.meta.env.PROD) {
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  }
+
+  if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
+  response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+} else if (url.pathname.startsWith('/admin')) {
+  // Las páginas admin NUNCA deben cachearse
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  response.headers.set('Pragma', 'no-cache'); // compatibilidad HTTP/1.0
+}
+
+  return response;
+});
 </file>
 
 <file path=".gitignore">
@@ -3655,6 +3674,9 @@ Requiere configuración previa del archivo `.env` con las credenciales de Supaba
   "main": "./dist/_worker.js/index.js",
   "compatibility_date": "2026-05-17",
   "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    { "binding": "RATE_LIMIT_KV", "id": "TU_KV_NAMESPACE_ID" }
+  ],
   "env": {
     "production": {
       "name": "creaciones-lolita-prod"
@@ -3662,19 +3684,7 @@ Requiere configuración previa del archivo `.env` con las credenciales de Supaba
   },
   "observability": {
     "enabled": true
-  },
-  "rules": [
-    {
-      "action": "block",
-      "expression": "(http.request.uri.path eq \"/admin/login\" and http.request.method eq \"POST\")",
-      "ratelimit": {
-        "characteristics": ["ip.src"],
-        "period": 60,
-        "requests_per_period": 5,
-        "mitigation_timeout": 600
-      }
-    }
-  ]
+  }
 }
 </file>
 
@@ -3697,7 +3707,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     build: {
-      cssMinify: 'lightningcss'
+      // cssMinify: 'lightningcss'
     }
   },
   prefetch: {
@@ -3717,7 +3727,7 @@ export default defineConfig({
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && cp wrangler.prod.json wrangler.json",
     "preview": "astro preview",
     "astro": "astro"
   },
