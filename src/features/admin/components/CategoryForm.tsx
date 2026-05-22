@@ -1,4 +1,4 @@
-import React, { useState, type ChangeEvent, type FormEvent } from 'react';
+import React, { useState, useEffect, type FormEvent } from 'react';
 import type { Category } from '@/core/types/database';
 import { Button } from '@/ui/components/Button';
 import { navigate } from 'astro:transitions/client';
@@ -18,14 +18,14 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
   const [error, setError] = useState<string>('');
   
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSlugManual, setIsSlugManual] = useState(false);
 
-  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setName(value);
-    if (!isEdit) {
-      setSlug(generateSlug(value));
+  // Observador en tiempo real para generar el slug automáticamente
+  useEffect(() => {
+    if (!isEdit && !isSlugManual) {
+      setSlug(generateSlug(name));
     }
-  };
+  }, [name, isEdit, isSlugManual]);
 
   const confirmDelete = async () => {
     if (!initialData) return;
@@ -92,7 +92,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
             type="text" 
             required 
             value={name} 
-            onChange={handleNameChange} 
+            onChange={(e) => setName(e.target.value)} 
             className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold" 
             placeholder="Ej. Bodas" 
           />
@@ -104,7 +104,10 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
             type="text" 
             required 
             value={slug} 
-            onChange={(e) => setSlug(e.target.value)} 
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setIsSlugManual(true);
+            }} 
             disabled={isEdit} 
             className={`w-full px-4 py-2 border border-brand-border rounded-lg outline-none font-mono text-sm ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-cream-200 text-brand-muted'}`} 
           />

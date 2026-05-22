@@ -1,5 +1,6 @@
-export const generateSlug = (text: string): string => {
-  return text
+export const generateSlug = (text: string | undefined | null): string => {
+  if (!text) return '';
+  return String(text)
     .normalize('NFD')                         // Separa las letras de sus acentos
     .replace(/[\u0300-\u036f]/g, '')          // Elimina los acentos separados
     .replace(/ñ/gi, 'n')                      // Convierte la 'ñ' en 'n'
