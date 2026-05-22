@@ -72,13 +72,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSlugManual, setIsSlugManual] = useState(false);
 
-  // Observador en tiempo real para generar el slug automáticamente
-  useEffect(() => {
-    if (!isEdit && !isSlugManual) {
-      setSlug(generateSlug(name));
-    }
-  }, [name, isEdit, isSlugManual]);
-
+  // Limpieza de memoria (Object URLs) al desmontar
   useEffect(() => {
     return () => {
       previews.forEach(p => {
@@ -86,6 +80,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
       });
     };
   }, [previews]);
+
+  // Generamos el slug directamente al teclear para respuesta instántanea
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setName(value);
+    if (!isEdit && !isSlugManual) {
+      setSlug(generateSlug(value));
+    }
+  };
+
+  const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSlug(e.target.value);
+    setIsSlugManual(true);
+  };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -197,7 +205,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
             type="text"
             required
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={handleNameChange}
             className="w-full px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
           />
         </div>
@@ -209,10 +217,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
             type="text"
             required
             value={slug}
-            onChange={(e) => {
-              setSlug(e.target.value);
-              setIsSlugManual(true);
-            }}
+            onChange={handleSlugChange}
             disabled={isEdit}
             className={`w-full px-4 py-2 border border-brand-border rounded-lg outline-none font-mono text-sm ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-cream-200 text-brand-muted'}`}
             title={isEdit ? "No se puede editar el slug" : ""}
