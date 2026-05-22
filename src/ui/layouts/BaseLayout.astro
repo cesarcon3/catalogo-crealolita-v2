@@ -18,6 +18,8 @@ const {
 const pageTitle = title === SITE_CONFIG.name ? title : `${title} | ${SITE_CONFIG.name}`;
 const canonicalURL = new URL(Astro.url.pathname, SITE_CONFIG.url);
 const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).toString();
+
+const whatsappLink = `https://wa.me/${SITE_CONFIG.contact.whatsapp}?text=${encodeURIComponent(SITE_CONFIG.contact.defaultMessage)}`;
 ---
 
 <!DOCTYPE html>
@@ -35,11 +37,6 @@ const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).to
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImage} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:alt" content="Creaciones Lolita - Productos Personalizados en MDF" />
-    <meta property="fb:app_id" content="1007704492196986" />
     <meta property="og:site_name" content={SITE_CONFIG.name} />
 
     <meta property="twitter:card" content="summary_large_image" />
@@ -72,5 +69,20 @@ const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).to
       </div>
     </footer>
     
+    <a 
+      href={whatsappLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-[0_4px_14px_0_rgba(37,211,102,0.39)] hover:bg-[#128C7E] hover:scale-110 hover:shadow-[0_6px_20px_rgba(37,211,102,0.5)] transition-all duration-300 z-50 flex items-center justify-center group"
+      aria-label="Contactar por WhatsApp"
+    >
+      <svg viewBox="0 0 24 24" class="w-8 h-8" stroke="none" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+        <path d="M12 0c-6.627 0-12 5.373-12 12 0 2.084.536 4.048 1.494 5.765l-1.494 6.235 6.402-1.455c1.677.876 3.593 1.378 5.598 1.378 6.627 0 12-5.373 12-12s-5.373-12-12-12zm0 21.84c-1.841 0-3.578-.475-5.111-1.314l-.366-.2-3.805.864.88-3.666-.219-.371c-.911-1.547-1.419-3.344-1.419-5.233 0-5.433 4.417-9.84 9.84-9.84 5.433 0 9.84 4.407 9.84 9.84s-4.407 9.84-9.84 9.84z"/>
+      </svg>
+      <span class="absolute right-16 bg-black text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        ¡Chatea con nosotros!
+      </span>
+    </a>
   </body>
 </html>

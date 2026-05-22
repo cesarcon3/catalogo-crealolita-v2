@@ -1,6 +1,6 @@
 export const SITE_CONFIG = {
   name: 'Creaciones Lolita',
-  description: 'Especialistas en productos personalizados en MDF con corte y grabado láser en Venezuela.',
+  description: 'Especialistas en productos personalizados en MDF con corte y grabado láser en Venezuela. Creamos piezas únicas y artesanales para decoración, regalos y eventos especiales.',
   url: 'https://creacioneslolita.com',
   contact: {
     whatsapp: '584161452966',
