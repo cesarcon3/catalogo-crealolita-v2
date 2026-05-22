@@ -48,7 +48,7 @@ const products = (rawProducts || []).map((product) => {
 
   {error && (
     <div class="p-4 bg-red-50 text-red-600 border-b border-red-100">
-      Error al cargar los productos: {error.message}
+      {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error al cargar los productos: ${error.message}`}
     </div>
   )}
 

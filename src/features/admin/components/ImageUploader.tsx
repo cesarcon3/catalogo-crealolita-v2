@@ -1,10 +1,15 @@
 import React, { type ChangeEvent } from 'react';
 import type { ExistingImage } from './ProductForm';
 
+interface PreviewItem {
+  id: string;
+  url: string;
+}
+
 interface ImageUploaderProps {
   existingImages: ExistingImage[];
   onRemoveExisting: (path: string) => void;
-  previewUrls: string[];
+  previews: PreviewItem[];
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onRemoveNewFile: (index: number) => void;
 }
@@ -12,7 +17,7 @@ interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   existingImages,
   onRemoveExisting,
-  previewUrls,
+  previews,
   onFileChange,
   onRemoveNewFile
 }) => {
@@ -49,13 +54,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         className="w-full text-sm text-brand-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold file:text-white hover:file:bg-gold-dark transition-colors cursor-pointer"
       />
       
-      {previewUrls.length > 0 && (
+      {previews.length > 0 && (
         <div className="mt-6 border-t border-brand-border pt-4">
           <span className="text-sm font-semibold text-brand-muted block mb-2">Imágenes nuevas a subir:</span>
           <div className="flex gap-4 overflow-x-auto py-2">
-            {previewUrls.map((url, idx) => (
-              <div key={idx} className="relative w-32 h-32 flex-shrink-0 group">
-                <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover rounded-lg border-2 border-green-400 shadow-sm" />
+            {previews.map((preview, idx) => (
+              <div key={preview.id} className="relative w-32 h-32 flex-shrink-0 group">
+                <img src={preview.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded-lg border-2 border-green-400 shadow-sm" />
                 <button
                   type="button"
                   onClick={() => onRemoveNewFile(idx)}

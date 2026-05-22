@@ -1,139 +1,67 @@
-import { supabase } from '../../src/lib/supabase';
-import type { Product, Category } from '@/core/types/database';
+import type { APIRoute } from 'astro';
+import { supabase } from '@/lib/supabase';
+import { SITE_CONFIG } from '@/core/constants/site';
 
-export interface PublicProduct extends Omit<Product, 'categories'> {
-  primary_image_url: string | null;
-  categories: { name: string; slug: string } | null;
+interface SitemapCategory {
+  slug: string;
 }
 
-export interface ProductDetail extends Omit<Product, 'categories'> {
-  images: { url: string | null; is_primary: boolean }[];
-  categories: { name: string; slug: string } | null;
+interface SitemapProduct {
+  slug: string;
+  updated_at: string | null;
 }
 
-interface RawProduct extends Omit<Product, 'categories'> {
-  categories: { name: string; slug: string } | null;
-  product_images: { storage_path: string; is_primary: boolean; display_order?: number }[];
-}
-
-const getImageUrl = (path: string | null | undefined) => {
-  if (!path) return null;
-  const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-  return data.publicUrl;
-};
-
-export const getCategories = async (): Promise<Category[]> => {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
-  return data as Category[];
-};
-
-export const getPublicProducts = async (page = 1, perPage = 48): Promise<{ featured: PublicProduct[], regular: PublicProduct[] }> => {
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
-
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      categories (name, slug),
-      product_images (storage_path, is_primary)
-    `)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (error || !data) {
-    console.error('Error fetching public products:', error);
-    return { featured: [], regular: [] };
-  }
-
-  const formattedProducts: PublicProduct[] = (data as unknown as RawProduct[]).map((item) => {
-    const primaryImage = item.product_images?.find((img) => img.is_primary) 
-                      || item.product_images?.[0];
-
-    return {
-      ...item,
-      categories: item.categories,
-      primary_image_url: getImageUrl(primaryImage?.storage_path)
-    };
-  });
-
-  return {
-    featured: formattedProducts.filter(p => p.is_featured),
-    regular: formattedProducts.filter(p => !p.is_featured)
-  };
-};
-
-export const getProductsByCategory = async (categorySlug: string, page = 1, perPage = 48): Promise<PublicProduct[]> => {
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
-
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      categories!inner (name, slug),
-      product_images (storage_path, is_primary)
-    `)
-    .eq('is_active', true)
-    .eq('categories.slug', categorySlug)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (error || !data) {
-    console.error('Error fetching category products:', error);
-    return [];
-  }
-
-  return (data as unknown as RawProduct[]).map((item) => {
-    const primaryImage = item.product_images?.find((img) => img.is_primary) 
-                      || item.product_images?.[0];
-
-    return {
-      ...item,
-      categories: item.categories,
-      primary_image_url: getImageUrl(primaryImage?.storage_path)
-    };
+const escapeXml = (unsafe: string) => {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case "'": return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
   });
 };
 
-export const getProductBySlug = async (slug: string): Promise<ProductDetail | null> => {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      categories (name, slug),
-      product_images (storage_path, is_primary, display_order)
-    `)
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single();
+export const GET: APIRoute = async () => {
+  const [productsRes, categoriesRes] = await Promise.all([
+    supabase.from('products').select('slug, updated_at').eq('is_active', true),
+    supabase.from('categories').select('slug')
+  ]);
 
-  if (error || !data) {
-    console.error('Error fetching product details:', error);
-    return null;
-  }
+  const products = productsRes.data || [];
+  const categories = categoriesRes.data || [];
 
-  const rawData = data as unknown as RawProduct;
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>${SITE_CONFIG.url}/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+      ${categories.map((cat: SitemapCategory) => `
+        <url>
+          <loc>${SITE_CONFIG.url}/categoria/${escapeXml(cat.slug)}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `).join('')}
+      ${products.map((prod: SitemapProduct) => `
+        <url>
+          <loc>${SITE_CONFIG.url}/producto/${escapeXml(prod.slug)}</loc>
+          <lastmod>${prod.updated_at ? new Date(prod.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>
+          <changefreq>monthly</changefreq>
+          <priority>0.7</priority>
+        </url>
+      `).join('')}
+    </urlset>
+  `.trim();
 
-  const sortedImages = (rawData.product_images || [])
-    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-    .map((img) => ({
-      url: getImageUrl(img.storage_path),
-      is_primary: img.is_primary
-    }));
-
-  return {
-    ...rawData,
-    categories: rawData.categories,
-    images: sortedImages
-  };
+  return new Response(sitemap, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  });
 };

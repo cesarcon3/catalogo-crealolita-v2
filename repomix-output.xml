@@ -71,6 +71,7 @@ src/
       services/
         publicProducts.ts
   lib/
+    api-validators.ts
     supabase-server.ts
     supabase.ts
   pages/
@@ -647,9 +648,9 @@ import { Button } from '@/ui/components/Button';
 
 interface DynamicListInputProps {
   label: string;
-  items: string[];
+  items: { id: string; value: string }[];
   onAdd: (item: string) => void;
-  onRemove: (index: number) => void;
+  onRemove: (id: string) => void;
   placeholder?: string;
 }
 
@@ -661,6 +662,7 @@ export const DynamicListInput: React.FC<DynamicListInputProps> = ({
   placeholder = ''
 }) => {
   const [currentValue, setCurrentValue] = useState('');
+  const inputId = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
 
   const handleAdd = () => {
     if (currentValue.trim()) {
@@ -678,9 +680,10 @@ export const DynamicListInput: React.FC<DynamicListInputProps> = ({
 
   return (
     <div>
-      <label className="block text-sm font-semibold text-brand-text mb-2">{label}</label>
+      <label htmlFor={inputId} className="block text-sm font-semibold text-brand-text mb-2">{label}</label>
       <div className="flex gap-2">
         <input
+          id={inputId}
           type="text"
           value={currentValue}
           onChange={(e) => setCurrentValue(e.target.value)}
@@ -695,14 +698,15 @@ export const DynamicListInput: React.FC<DynamicListInputProps> = ({
       
       {items.length > 0 && (
         <ul className="mt-3 space-y-1.5">
-          {items.map((item, index) => (
-            <li key={index} className="flex justify-between items-center bg-cream-100 px-3 py-1.5 rounded-lg text-sm text-brand-text border border-brand-border">
-              <span>{item}</span>
+          {items.map((item) => (
+            <li key={item.id} className="flex justify-between items-center bg-cream-100 px-3 py-1.5 rounded-lg text-sm text-brand-text border border-brand-border">
+              <span>{item.value}</span>
               <button 
                 type="button" 
-                onClick={() => onRemove(index)} 
+                onClick={() => onRemove(item.id)} 
                 className="text-red-500 font-bold hover:text-red-700 px-2"
                 title="Eliminar elemento"
+                aria-label={`Eliminar ${item.value}`}
               >
                 ×
               </button>
@@ -897,8 +901,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   const [isActive, setIsActive] = useState<boolean>(initialData?.isActive ?? true);
   const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
 
-  const [features, setFeatures] = useState<string[]>(initialData?.features || []);
-  const [customizations, setCustomizations] = useState<string[]>(initialData?.customizations || []);
+  const [features, setFeatures] = useState<{id: string, value: string}[]>(
+    (initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f }))
+  );
+  const [customizations, setCustomizations] = useState<{id: string, value: string}[]>(
+    (initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c }))
+  );
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -913,7 +921,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
 
   useEffect(() => {
     return () => {
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      previewUrls.forEach(url => {
+        try { URL.revokeObjectURL(url); } catch { /* silenciar */ }
+      });
     };
   }, [previewUrls]);
 
@@ -978,8 +988,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     formData.append('production_time', productionTime);
     formData.append('is_active', String(isActive));
     formData.append('is_featured', String(isFeatured));
-    formData.append('features', JSON.stringify(features));
-    formData.append('customization_options', JSON.stringify(customizations));
+    
+    formData.append('features', JSON.stringify(features.map(f => f.value)));
+    formData.append('customization_options', JSON.stringify(customizations.map(c => c.value)));
 
     if (isEdit && deletedExistingImagePaths.length > 0) {
       formData.append('deleted_images', JSON.stringify(deletedExistingImagePaths));
@@ -996,7 +1007,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
 
       if (!response.ok) throw new Error(result.error || 'Error al guardar');
       
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      previewUrls.forEach(url => {
+        try { URL.revokeObjectURL(url); } catch { /* silenciar */ }
+      });
       navigate('/admin/productos');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
@@ -1109,16 +1122,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
           label="Características"
           placeholder="Ej. MDF de alta calidad 3mm"
           items={features}
-          onAdd={(item) => setFeatures([...features, item])}
-          onRemove={(idx) => setFeatures(features.filter((_, i) => i !== idx))}
+          onAdd={(val) => setFeatures([...features, { id: crypto.randomUUID(), value: val }])}
+          onRemove={(id) => setFeatures(features.filter((f) => f.id !== id))}
         />
 
         <DynamicListInput 
           label="Personalización"
           placeholder="Ej. Nombre de la Quinceañera"
           items={customizations}
-          onAdd={(item) => setCustomizations([...customizations, item])}
-          onRemove={(idx) => setCustomizations(customizations.filter((_, i) => i !== idx))}
+          onAdd={(val) => setCustomizations([...customizations, { id: crypto.randomUUID(), value: val }])}
+          onRemove={(id) => setCustomizations(customizations.filter((c) => c.id !== id))}
         />
       </div>
 
@@ -1177,20 +1190,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
 <file path="src/features/admin/components/ProductList.astro">
 ---
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import type { Product } from '@/core/types/database';
-// FIX: Usamos el botón nativo de Astro para vistas estáticas
 import Button from '@/ui/components/Button.astro';
 
 const supabase = createSupabaseServerClient(Astro.cookies);
 
-// FIX: Usamos Omit para evitar el choque de tipos con la interfaz original
-interface ProductListItem extends Omit<Product, 'categories'> {
-  categories: { name: string } | null;
-  product_images: { storage_path: string; is_primary: boolean }[];
-}
-
-// Consultamos productos haciendo un JOIN con categories y product_images
-const { data, error } = await supabase
+const { data: rawProducts, error } = await supabase
   .from('products')
   .select(`
     *, 
@@ -1199,10 +1203,7 @@ const { data, error } = await supabase
   `)
   .order('created_at', { ascending: false });
 
-const rawProducts = (data as ProductListItem[]) || [];
-
-// Procesamos los datos para inyectar las URLs públicas de las miniaturas y el conteo
-const products = rawProducts.map((product) => {
+const products = (rawProducts || []).map((product) => {
   const images = product.product_images || [];
   const primaryImage = images.find((img) => img.is_primary) || images[0];
   
@@ -1212,8 +1213,12 @@ const products = rawProducts.map((product) => {
     thumbnailUrl = urlData.publicUrl;
   }
 
+  const categoryData = product.categories;
+  const categoryName = Array.isArray(categoryData) ? categoryData[0]?.name : categoryData?.name;
+
   return {
     ...product,
+    categoryName,
     thumbnailUrl,
     imageCount: images.length
   };
@@ -1296,7 +1301,7 @@ const products = rawProducts.map((product) => {
               </td>
 
               <td class="p-4 text-sm text-brand-muted whitespace-nowrap">
-                {product.categories?.name || 'Sin categoría'}
+                {product.categoryName || 'Sin categoría'}
               </td>
               <td class="p-4 font-medium whitespace-nowrap">
                 {product.currency} {product.price.toFixed(2)}
@@ -1356,7 +1361,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ productName, images 
           alt={productName}
           width="800"
           height="800"
-          decoding="sync"
+          decoding="async"
           fetchPriority="high"
           className="w-full h-full object-cover transition-opacity duration-300"
         />
@@ -1582,7 +1587,7 @@ const unitPrice = product.sale_type === 'docena' ? (product.price / 12).toFixed(
 </file>
 
 <file path="src/features/products/services/publicProducts.ts">
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import type { Product, Category } from '@/core/types/database';
 
 export interface PublicProduct extends Omit<Product, 'categories'> {
@@ -1595,13 +1600,11 @@ export interface ProductDetail extends Omit<Product, 'categories'> {
   categories: { name: string; slug: string } | null;
 }
 
-// FIX IMPORTANTE-7 (Parte 2): Usamos Omit para evitar el choque de tipos con la interfaz original
 interface RawProduct extends Omit<Product, 'categories'> {
   categories: { name: string; slug: string } | null;
   product_images: { storage_path: string; is_primary: boolean; display_order?: number }[];
 }
 
-// FIX: Permitimos undefined en la firma para que coincida con el operador optional chaining (?)
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
   const { data } = supabase.storage.from('product-images').getPublicUrl(path);
@@ -1621,7 +1624,10 @@ export const getCategories = async (): Promise<Category[]> => {
   return data as Category[];
 };
 
-export const getPublicProducts = async (): Promise<{ featured: PublicProduct[], regular: PublicProduct[] }> => {
+export const getPublicProducts = async (page = 1, perPage = 48): Promise<{ featured: PublicProduct[], regular: PublicProduct[] }> => {
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -1631,7 +1637,7 @@ export const getPublicProducts = async (): Promise<{ featured: PublicProduct[], 
     `)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
-    .limit(48);
+    .range(from, to);
 
   if (error || !data) {
     console.error('Error fetching public products:', error);
@@ -1655,7 +1661,10 @@ export const getPublicProducts = async (): Promise<{ featured: PublicProduct[], 
   };
 };
 
-export const getProductsByCategory = async (categorySlug: string): Promise<PublicProduct[]> => {
+export const getProductsByCategory = async (categorySlug: string, page = 1, perPage = 48): Promise<PublicProduct[]> => {
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -1666,7 +1675,7 @@ export const getProductsByCategory = async (categorySlug: string): Promise<Publi
     .eq('is_active', true)
     .eq('categories.slug', categorySlug)
     .order('created_at', { ascending: false })
-    .limit(48);
+    .range(from, to);
 
   if (error || !data) {
     console.error('Error fetching category products:', error);
@@ -1719,9 +1728,37 @@ export const getProductBySlug = async (slug: string): Promise<ProductDetail | nu
 };
 </file>
 
+<file path="src/lib/api-validators.ts">
+import type { SaleType } from '@/core/types/database';
+
+export const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+export const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
+export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+export const VALID_SALE_TYPES: SaleType[] = ['unidad', 'docena', 'mixto'];
+
+export function validateImageFile(file: File): string | null {
+  if (!ALLOWED_MIME_TYPES.has(file.type)) return `Tipo no permitido: ${file.type}`;
+  if (file.size > MAX_IMAGE_SIZE_BYTES) return `El archivo supera el límite de 5MB`;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!ALLOWED_EXTENSIONS.has(ext)) return `Extensión no permitida: .${ext}`;
+  return null;
+}
+
+export function parseStringArray(raw: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(raw ?? '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === 'string');
+  } catch {
+    return [];
+  }
+}
+</file>
+
 <file path="src/lib/supabase-server.ts">
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { AstroCookies } from 'astro';
+import type { Database } from '@/core/types/database';
 
 export const createSupabaseServerClient = (cookies: AstroCookies) => {
   const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
@@ -1731,7 +1768,7 @@ export const createSupabaseServerClient = (cookies: AstroCookies) => {
     throw new Error('Faltan variables de entorno de Supabase.');
   }
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(key: string) {
         return cookies.get(key)?.value;
@@ -1756,6 +1793,7 @@ export const createSupabaseServerClient = (cookies: AstroCookies) => {
 
 <file path="src/lib/supabase.ts">
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/core/types/database';
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
@@ -1764,9 +1802,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Faltan las variables de entorno de Supabase (URL o ANON_KEY).');
 }
 
-// FIX: En entornos SSR (servidor), NUNCA debemos persistir la sesión globalmente.
-// Esto evita fugas de estado entre diferentes usuarios visitando la tienda pública.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: false, 
     autoRefreshToken: false,
@@ -1824,7 +1860,11 @@ const categories = (data as Category[]) || [];
   </div>
 
   <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
-    {error && <div class="p-4 bg-red-50 text-red-600">Error: {error.message}</div>}
+    {error && (
+  <div class="p-4 bg-red-50 text-red-600">
+    {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error: ${error.message}`}
+  </div>
+)}
     
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
@@ -2172,7 +2212,7 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
 
 <file path="src/pages/api/categories/[id].ts">
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
 
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
   try {
@@ -2181,12 +2221,19 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 
     const supabase = createSupabaseServerClient(cookies);
     
-    // Validación segura
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
 
     const body = await request.json();
     const { name, slug, description } = body;
+
+    if (name && name.length > 100) {
+      return new Response(JSON.stringify({ error: 'Nombre demasiado largo (máx. 100 caracteres)' }), { status: 400 });
+    }
+    
+    if (slug && (slug.length > 100 || !/^[a-z0-9-]+$/.test(slug))) {
+      return new Response(JSON.stringify({ error: 'Slug inválido' }), { status: 400 });
+    }
 
     const { error } = await supabase
       .from('categories')
@@ -2196,8 +2243,13 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     if (error) throw new Error(error.message);
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[Categories API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }),
+      { status: 500 }
+    );
   }
 };
 
@@ -2208,7 +2260,6 @@ export const DELETE: APIRoute = async ({ params, cookies }) => {
 
     const supabase = createSupabaseServerClient(cookies);
     
-    // Validación segura
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
 
@@ -2227,21 +2278,25 @@ export const DELETE: APIRoute = async ({ params, cookies }) => {
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[Categories API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }),
+      { status: 500 }
+    );
   }
 };
 </file>
 
 <file path="src/pages/api/categories/index.ts">
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const supabase = createSupabaseServerClient(cookies);
     
-    // Validación segura
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
 
@@ -2250,6 +2305,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (!name || !slug) {
       return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
+    }
+
+    if (name.length > 100) {
+      return new Response(JSON.stringify({ error: 'Nombre demasiado largo (máx. 100 caracteres)' }), { status: 400 });
+    }
+    
+    if (slug.length > 100 || !/^[a-z0-9-]+$/.test(slug)) {
+      return new Response(JSON.stringify({ error: 'Slug inválido' }), { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -2261,40 +2324,26 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (error) throw new Error(error.message);
 
     return new Response(JSON.stringify({ success: true, data }), { status: 201 });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[Categories API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }),
+      { status: 500 }
+    );
   }
 };
 </file>
 
 <file path="src/pages/api/products/[id].ts">
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
 import type { SaleType } from '@/core/types/database';
+import { validateImageFile, parseStringArray, VALID_SALE_TYPES } from '@/lib/api-validators';
 
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-
-function validateImageFile(file: File): string | null {
-  if (!ALLOWED_MIME_TYPES.has(file.type)) return `Tipo de archivo no permitido: ${file.type}`;
-  if (file.size > MAX_SIZE_BYTES) return `El archivo supera el límite de 5MB`;
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-  if (!ALLOWED_EXTENSIONS.has(ext)) return `Extensión no permitida: .${ext}`;
-  return null;
+interface StoragePathItem {
+  storage_path: string;
 }
-
-function parseStringArray(raw: string | null | undefined): string[] {
-  try {
-    const parsed = JSON.parse(raw ?? '[]');
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is string => typeof item === 'string');
-  } catch {
-    return [];
-  }
-}
-
-const VALID_SALE_TYPES: SaleType[] = ['unidad', 'docena', 'mixto'];
 
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
   try {
@@ -2361,14 +2410,13 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
     }
 
-    // Prevención de Path Traversal / IDOR (Ya implementado previamente)
     if (deletedImages.length > 0) {
       const { data: validImages } = await supabase
         .from('product_images')
         .select('storage_path')
         .eq('product_id', id);
         
-      const validPaths = new Set(validImages?.map(i => i.storage_path) || []);
+      const validPaths = new Set(validImages?.map((i: StoragePathItem) => i.storage_path) || []);
       const safeDeletedImages = deletedImages.filter((path: string) => validPaths.has(path));
 
       if (safeDeletedImages.length > 0) {
@@ -2437,7 +2485,7 @@ export const DELETE: APIRoute = async ({ params, cookies }) => {
       .eq('product_id', id);
 
     if (images && images.length > 0) {
-      const paths = images.map(img => img.storage_path);
+      const paths = images.map((img: StoragePathItem) => img.storage_path);
       await supabase.storage.from('product-images').remove(paths);
     }
 
@@ -2459,35 +2507,9 @@ export const DELETE: APIRoute = async ({ params, cookies }) => {
 
 <file path="src/pages/api/products/index.ts">
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
 import type { SaleType } from '@/core/types/database';
-
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-
-function validateImageFile(file: File): string | null {
-  if (!ALLOWED_MIME_TYPES.has(file.type)) return `Tipo de archivo no permitido: ${file.type}`;
-  if (file.size > MAX_SIZE_BYTES) return `El archivo supera el límite de 5MB`;
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-  if (!ALLOWED_EXTENSIONS.has(ext)) return `Extensión no permitida: .${ext}`;
-  return null;
-}
-
-// FIX MEJORA-6: Parseo robusto para evitar inyección de objetos JSON
-function parseStringArray(raw: string | null | undefined): string[] {
-  try {
-    const parsed = JSON.parse(raw ?? '[]');
-    if (!Array.isArray(parsed)) return [];
-    // Filtramos para garantizar que cada elemento sea estrictamente un string
-    return parsed.filter((item): item is string => typeof item === 'string');
-  } catch {
-    return [];
-  }
-}
-
-// FIX IMPORTANTE-2: Lista blanca de tipos de venta permitidos
-const VALID_SALE_TYPES: SaleType[] = ['unidad', 'docena', 'mixto'];
+import { validateImageFile, parseStringArray, VALID_SALE_TYPES } from '@/lib/api-validators';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -2513,7 +2535,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
     }
 
-    // FIX IMPORTANTE-3 y MEJORA-5: Validación estricta matemática del precio
     const priceStr = formData.get('price')?.toString();
     if (!priceStr) {
       return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
@@ -2523,13 +2544,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
     }
 
-    // FIX IMPORTANTE-2: Validación del Enum
     const sale_type = formData.get('sale_type')?.toString() as SaleType;
     if (!VALID_SALE_TYPES.includes(sale_type)) {
       return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
     }
 
-    // Aplicamos el parseo seguro
     const features = parseStringArray(formData.get('features')?.toString());
     const customization_options = parseStringArray(formData.get('customization_options')?.toString());
 
@@ -2723,7 +2742,6 @@ if (!product) {
   return Astro.redirect('/404');
 }
 
-// FIX: Aserción estricta de tipos JSON a string[]
 const features: string[] = Array.isArray(product.features) ? (product.features as string[]) : [];
 const customizations: string[] = Array.isArray(product.customization_options) ? (product.customization_options as string[]) : [];
 
@@ -2738,7 +2756,7 @@ const layoutProps = {
 
 <BaseLayout {...layoutProps}>
   
-  <script type="application/ld+json" set:html={JSON.stringify({
+  <script type="application/ld+json" nonce={Astro.locals.cspNonce} set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
     "name": product.name,
@@ -2841,7 +2859,7 @@ const layoutProps = {
 
       <div class="mt-auto">
         <OrderCalculator 
-          client:load
+          client:visible
           productName={product.name}
           productSlug={product.slug}
           price={product.price}
@@ -2857,10 +2875,18 @@ const layoutProps = {
 
 <file path="src/pages/sitemap.xml.ts">
 import type { APIRoute } from 'astro';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 import { SITE_CONFIG } from '@/core/constants/site';
 
-// Función para escapar caracteres especiales en el XML y evitar rupturas de sintaxis
+interface SitemapCategory {
+  slug: string;
+}
+
+interface SitemapProduct {
+  slug: string;
+  updated_at: string | null;
+}
+
 const escapeXml = (unsafe: string) => {
   return unsafe.replace(/[<>&'"]/g, (c) => {
     switch (c) {
@@ -2883,7 +2909,6 @@ export const GET: APIRoute = async () => {
   const products = productsRes.data || [];
   const categories = categoriesRes.data || [];
 
-  // FIX CRÍTICO 2: Codificación UTF-8 correcta y escapado de URLs
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       <url>
@@ -2891,17 +2916,17 @@ export const GET: APIRoute = async () => {
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
       </url>
-      ${categories.map(cat => `
+      ${categories.map((cat: SitemapCategory) => `
         <url>
           <loc>${SITE_CONFIG.url}/categoria/${escapeXml(cat.slug)}</loc>
           <changefreq>weekly</changefreq>
           <priority>0.8</priority>
         </url>
       `).join('')}
-      ${products.map(prod => `
+      ${products.map((prod: SitemapProduct) => `
         <url>
           <loc>${SITE_CONFIG.url}/producto/${escapeXml(prod.slug)}</loc>
-          <lastmod>${new Date(prod.updated_at).toISOString().split('T')[0]}</lastmod>
+          <lastmod>${prod.updated_at ? new Date(prod.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>
           <changefreq>monthly</changefreq>
           <priority>0.7</priority>
         </url>
@@ -2912,7 +2937,7 @@ export const GET: APIRoute = async () => {
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=86400' // Opcional: Recomendado por la auditoría
+      'Cache-Control': 'public, max-age=86400' 
     }
   });
 };
@@ -2960,10 +2985,9 @@ const secureRel = target === '_blank' ? (rel || 'noopener noreferrer') : rel;
 </file>
 
 <file path="src/ui/components/Button.tsx">
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { getButtonClasses, type ButtonVariant, type ButtonSize } from '@/ui/utils/buttonClasses';
 
-// FIX IMPORTANTE-7: Tipado estricto eliminando el uso de 'any'
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & 
   React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     variant?: ButtonVariant;
@@ -2972,7 +2996,7 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
     href?: string;
   };
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
   variant = 'primary',
   size = 'md',
   fullWidth = false,
@@ -2980,27 +3004,29 @@ export const Button: React.FC<ButtonProps> = ({
   href,
   children,
   ...rest
-}) => {
+}, ref) => {
   const combinedClasses = getButtonClasses(variant, size, fullWidth, className);
   
   if (href) {
     return (
-      <a href={href} className={combinedClasses} {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
+      <a ref={ref as React.Ref<HTMLAnchorElement>} href={href} className={combinedClasses} {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
         {children}
       </a>
     );
   }
 
   return (
-    <button className={combinedClasses} {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+    <button ref={ref as React.Ref<HTMLButtonElement>} className={combinedClasses} {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
       {children}
     </button>
   );
-};
+});
+
+Button.displayName = 'Button';
 </file>
 
 <file path="src/ui/components/ConfirmModal.tsx">
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from './Button';
 
 interface ConfirmModalProps {
@@ -3015,20 +3041,56 @@ interface ConfirmModalProps {
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({ 
   isOpen, title, message, onConfirm, onCancel, isLoading = false 
 }) => {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
       document.body.style.overflow = 'hidden';
+      setTimeout(() => cancelRef.current?.focus(), 0);
     } else {
       document.body.style.overflow = 'unset';
+      previousFocusRef.current?.focus();
     }
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      if (e.key === 'Escape' && !isLoading) onCancel();
+      
+      if (e.key === 'Tab') {
+        const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        
+        const first = focusable.item(0) as HTMLElement | null;
+        const last = focusable.item(focusable.length - 1) as HTMLElement | null;
+
+        if (!first || !last) return;
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isLoading, onCancel]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in-up">
+      <div ref={modalRef} className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in-up">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl flex-shrink-0">
             ⚠️
@@ -3041,7 +3103,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         </p>
 
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
-          <Button type="button" variant="neutral" onClick={onCancel} disabled={isLoading} fullWidth>
+          <Button ref={cancelRef} type="button" variant="neutral" onClick={onCancel} disabled={isLoading} fullWidth>
             Cancelar
           </Button>
           <Button type="button" variant="danger" onClick={onConfirm} disabled={isLoading} fullWidth>
@@ -3127,26 +3189,35 @@ const currentPath = Astro.url.pathname;
     </main>
 
     <script>
-      const btn = document.getElementById('mobile-menu-btn');
-      const sidebar = document.getElementById('mobile-sidebar');
-      const overlay = document.getElementById('mobile-overlay');
+      function initMobileMenu() {
+        const btn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('mobile-sidebar');
+        const overlay = document.getElementById('mobile-overlay');
 
-      const toggleMenu = () => {
-        const isClosed = sidebar?.classList.contains('-translate-x-full');
-        if (isClosed) {
-          sidebar?.classList.remove('hidden', '-translate-x-full');
-          overlay?.classList.remove('hidden');
-          btn?.setAttribute('aria-expanded', 'true');
-        } else {
-          sidebar?.classList.add('-translate-x-full');
-          overlay?.classList.add('hidden');
-          btn?.setAttribute('aria-expanded', 'false');
-          setTimeout(() => sidebar?.classList.add('hidden'), 300); // Wait for transition
-        }
-      };
+        if (!btn || !sidebar || !overlay) return;
 
-      btn?.addEventListener('click', toggleMenu);
-      overlay?.addEventListener('click', toggleMenu);
+        const newBtn = btn.cloneNode(true) as HTMLButtonElement;
+        btn.parentNode?.replaceChild(newBtn, btn);
+        
+        const toggleMenu = () => {
+          const isClosed = sidebar.classList.contains('-translate-x-full');
+          if (isClosed) {
+            sidebar.classList.remove('hidden', '-translate-x-full');
+            overlay.classList.remove('hidden');
+            newBtn.setAttribute('aria-expanded', 'true');
+          } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            newBtn.setAttribute('aria-expanded', 'false');
+            setTimeout(() => sidebar.classList.add('hidden'), 300);
+          }
+        };
+
+        newBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+      }
+
+      document.addEventListener('astro:page-load', initMobileMenu);
     </script>
   </body>
 </html>
@@ -3275,6 +3346,7 @@ interface ImportMeta {
 declare namespace App {
   interface Locals {
     userEmail?: string;
+    cspNonce?: string;
   }
 }
 </file>
@@ -3282,6 +3354,12 @@ declare namespace App {
 <file path="src/middleware.ts">
 import { defineMiddleware } from 'astro:middleware';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+function generateNonce(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array));
+}
 
 export const onRequest = defineMiddleware(async ({ cookies, url, request, redirect, locals }, next) => {
   const isApiMutation = url.pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
@@ -3309,25 +3387,34 @@ export const onRequest = defineMiddleware(async ({ cookies, url, request, redire
     }
   }
 
+  const nonce = generateNonce();
+  locals.cspNonce = nonce;
+
   const response = await next();
   
-  // FIX IMPORTANTE-8 (Cerrando el Bloque Naranja): Headers de Seguridad Restantes
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
+  
+  const supabaseHost = new URL(import.meta.env.PUBLIC_SUPABASE_URL).hostname;
+  
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://${supabaseHost}; connect-src 'self' https://${supabaseHost};`
   );
   
   if (import.meta.env.PROD) {
     response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
   }
 
-  // FIX MEJORA-3 (Bloque Amarillo): Caché en rutas públicas para rendimiento extremo
   if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
-    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  }
+  response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+} else if (url.pathname.startsWith('/admin')) {
+  // Las páginas admin NUNCA deben cachearse
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  response.headers.set('Pragma', 'no-cache'); // compatibilidad HTTP/1.0
+}
 
   return response;
 });
@@ -3493,7 +3580,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-
 # environment variables
 .env
 .env.production
@@ -3503,9 +3589,12 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
 # Cloudflare Wrangler state
 .wrangler/
 .wrangler/state/
+
+# Supabase CLI temp & state
 supabase/.temp/
 </file>
 
@@ -3538,6 +3627,26 @@ npm run dev
 \`\`\`
 
 Requiere configuración previa del archivo `.env` con las credenciales de Supabase (`PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY`).
+</file>
+
+<file path="tsconfig.json">
+{
+  "extends": "astro/tsconfigs/strictest",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist", "node_modules"]
+}
 </file>
 
 <file path="wrangler.prod.json">
@@ -3630,26 +3739,6 @@ export default defineConfig({
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   }
-}
-</file>
-
-<file path="tsconfig.json">
-{
-  "extends": "astro/tsconfigs/strictest",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  },
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules"]
 }
 </file>
 

@@ -85,6 +85,12 @@ const layoutProps = {
           <ProductCard product={product} />
         ))}
       </div>
+
+      {products.length === 48 && (
+        <p class="text-center text-sm text-brand-muted mt-8">
+          Mostrando los primeros 48 diseños. Contáctanos para ver más opciones.
+        </p>
+      )}
     </section>
   ) : (
     <div class="text-center py-16 bg-cream-100 rounded-2xl border border-brand-border mb-16 shadow-sm">

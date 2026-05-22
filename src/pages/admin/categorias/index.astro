@@ -19,7 +19,11 @@ const categories = (data as Category[]) || [];
   </div>
 
   <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
-    {error && <div class="p-4 bg-red-50 text-red-600">Error: {error.message}</div>}
+    {error && (
+  <div class="p-4 bg-red-50 text-red-600">
+    {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error: ${error.message}`}
+  </div>
+)}
     
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">

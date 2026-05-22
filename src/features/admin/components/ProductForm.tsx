@@ -35,6 +35,11 @@ interface ProductFormProps {
   initialData?: InitialProductData;
 }
 
+interface PreviewItem {
+  id: string;
+  url: string;
+}
+
 export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) => {
   const isEdit = !!initialData;
 
@@ -56,7 +61,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   );
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [previews, setPreviews] = useState<PreviewItem[]>([]);
 
   const [existingImages, setExistingImages] = useState<ExistingImage[]>(initialData?.existingImages || []);
   const [deletedExistingImagePaths, setDeletedExistingImagePaths] = useState<string[]>([]);
@@ -68,11 +73,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
 
   useEffect(() => {
     return () => {
-      previewUrls.forEach(url => {
-        try { URL.revokeObjectURL(url); } catch { /* silenciar */ }
+      previews.forEach(p => {
+        try { URL.revokeObjectURL(p.url); } catch { /* silenciar */ }
       });
     };
-  }, [previewUrls]);
+  }, [previews]);
 
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -86,18 +91,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       setSelectedFiles(prev => [...prev, ...filesArray]);
-      const newPreviews = filesArray.map(file => URL.createObjectURL(file));
-      setPreviewUrls(prev => [...prev, ...newPreviews]);
+      const newPreviews = filesArray.map(file => ({
+        id: crypto.randomUUID(),
+        url: URL.createObjectURL(file)
+      }));
+      setPreviews(prev => [...prev, ...newPreviews]);
     }
   };
 
   const removeNewFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => {
-      const newUrls = [...prev];
-      if (newUrls[index]) URL.revokeObjectURL(newUrls[index]);
-      newUrls.splice(index, 1);
-      return newUrls;
+    setPreviews(prev => {
+      const newPreviews = [...prev];
+      if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index].url);
+      newPreviews.splice(index, 1);
+      return newPreviews;
     });
   };
 
@@ -154,8 +162,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
 
       if (!response.ok) throw new Error(result.error || 'Error al guardar');
       
-      previewUrls.forEach(url => {
-        try { URL.revokeObjectURL(url); } catch { /* silenciar */ }
+      previews.forEach(p => {
+        try { URL.revokeObjectURL(p.url); } catch { /* silenciar */ }
       });
       navigate('/admin/productos');
     } catch (err) {
@@ -176,7 +184,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
       <ImageUploader 
         existingImages={existingImages}
         onRemoveExisting={removeExistingImage}
-        previewUrls={previewUrls}
+        previews={previews}
         onFileChange={handleFileChange}
         onRemoveNewFile={removeNewFile}
       />

@@ -41,6 +41,7 @@ export const onRequest = defineMiddleware(async ({ cookies, url, request, redire
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
   
   const supabaseHost = new URL(import.meta.env.PUBLIC_SUPABASE_URL).hostname;
   
@@ -54,8 +55,12 @@ export const onRequest = defineMiddleware(async ({ cookies, url, request, redire
   }
 
   if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
-    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-  }
+  response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+} else if (url.pathname.startsWith('/admin')) {
+  // Las páginas admin NUNCA deben cachearse
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  response.headers.set('Pragma', 'no-cache'); // compatibilidad HTTP/1.0
+}
 
   return response;
 });
