@@ -2396,21 +2396,6 @@ declare namespace App {
 }
 </file>
 
-<file path="src/core/utils/slug.ts">
-export const generateSlug = (text: string | undefined | null): string => {
-  if (!text) return '';
-  return String(text)
-    .normalize('NFD')                         // Separa las letras de sus acentos
-    .replace(/[\u0300-\u036f]/g, '')          // Elimina los acentos separados
-    .replace(/ñ/gi, 'n')                      // Convierte la 'ñ' en 'n'
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')                 // Elimina caracteres especiales restantes
-    .replace(/[\s_-]+/g, '-')                 // Reemplaza espacios por guiones
-    .replace(/^-+|-+$/g, '');                 // Limpia guiones al inicio o final
-};
-</file>
-
 <file path="src/features/admin/components/ImageUploader.tsx">
 import React, { type ChangeEvent } from 'react';
 import type { ExistingImage } from './ProductForm';
@@ -3169,13 +3154,65 @@ Requiere configuración previa del archivo `.env` con las credenciales de Supaba
 }
 </file>
 
+<file path="src/core/utils/slug.ts">
+export const generateSlug = (text: string | undefined | null): string => {
+  if (!text) return '';
+  return String(text)
+    .replace(/\u00f1/g, 'n')              // Convierte ñ en n (antes del normalize)
+    .replace(/\u00d1/g, 'N')              // Convierte Ñ en N (antes del normalize)
+    .normalize('NFD')                      // Separa las letras de sus acentos
+    .replace(/[\u0300-\u036f]/g, '')       // Elimina los acentos separados
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')             // Elimina caracteres especiales restantes
+    .replace(/[\s_-]+/g, '-')             // Reemplaza espacios por guiones
+    .replace(/^-+|-+$/g, '');             // Limpia guiones al inicio o final
+};
+</file>
+
+<file path="wrangler.prod.json">
+{
+  "name": "creaciones-lolita-api",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2026-05-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    { "binding": "RATE_LIMIT_KV", "id": "TU_KV_NAMESPACE_ID" }
+  ],
+  "env": {
+    "production": {
+      "name": "creaciones-lolita-prod"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}
+</file>
+
 <file path="src/features/admin/components/CategoryForm.tsx">
-import React, { useState, type ChangeEvent, type FormEvent } from 'react';
+import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import type { Category } from '@/core/types/database';
 import { Button } from '@/ui/components/Button';
 import { navigate } from 'astro:transitions/client';
-import { generateSlug } from '@/core/utils/slug';
+// import { generateSlug } from '@/core/utils/slug';
 import { ConfirmModal } from '@/ui/components/ConfirmModal';
+
+// Función auxiliar inline para garantizar que el slug se genere correctamente
+// sin depender de que el módulo externo se importe bien en el bundle
+const toSlug = (text: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/[\u00f1]/g, 'n')
+    .replace(/[\u00d1]/g, 'N')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
 
 interface CategoryFormProps {
   initialData?: Category;
@@ -3192,18 +3229,34 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSlugManual, setIsSlugManual] = useState(false);
 
+  // Reinicia el estado cuando cambian los datos iniciales (necesario con Astro ClientRouter)
+  useEffect(() => {
+    setName(initialData?.name || '');
+    setSlug(initialData?.slug || '');
+    setDescription(initialData?.description || '');
+    setError('');
+    setIsSlugManual(false);
+    setIsDeleteModalOpen(false);
+  }, [initialData?.id]);
+
   // Generamos el slug directamente al teclear para garantizar respuesta inmediata
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setName(value);
     if (!isEdit && !isSlugManual) {
-      setSlug(generateSlug(value));
+      setSlug(toSlug(value));
     }
   };
 
   const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSlug(e.target.value);
-    setIsSlugManual(true); // Si el usuario edita el slug manualmente, dejamos de autogenerarlo
+    const value = e.target.value;
+    setSlug(value);
+    // Si el usuario borra completamente el slug, volvemos al modo automático
+    if (value === '') {
+      setIsSlugManual(false);
+    } else {
+      setIsSlugManual(true); // Si el usuario edita el slug manualmente, dejamos de autogenerarlo
+    }
   };
 
   const confirmDelete = async () => {
@@ -3331,24 +3384,33 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
 };
 </file>
 
-<file path="wrangler.prod.json">
-{
-  "name": "creaciones-lolita-api",
-  "main": "./dist/_worker.js/index.js",
-  "compatibility_date": "2026-05-17",
-  "compatibility_flags": ["nodejs_compat"],
-  "kv_namespaces": [
-    { "binding": "RATE_LIMIT_KV", "id": "TU_KV_NAMESPACE_ID" }
+<file path="astro.config.mjs">
+import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
+import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  output: 'server',
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    }
+  }),
+  integrations: [
+    react()
   ],
-  "env": {
-    "production": {
-      "name": "creaciones-lolita-prod"
+  vite: {
+    plugins: [tailwindcss()],
+    build: {
+      // cssMinify: 'lightningcss'
     }
   },
-  "observability": {
-    "enabled": true
+  prefetch: {
+    prefetchAll: false,
+    defaultStrategy: 'hover'
   }
-}
+});
 </file>
 
 <file path="src/features/admin/components/ProductForm.tsx">
@@ -3358,8 +3420,24 @@ import { Button } from '@/ui/components/Button';
 import { DynamicListInput } from './DynamicListInput';
 import { ImageUploader } from './ImageUploader';
 import { navigate } from 'astro:transitions/client';
-import { generateSlug } from '@/core/utils/slug';
+// import { generateSlug } from '@/core/utils/slug';
 import { ConfirmModal } from '@/ui/components/ConfirmModal';
+
+// Función auxiliar inline para garantizar que el slug se genere correctamente
+// sin depender de que el módulo externo se importe bien en el bundle
+const toSlug = (text: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/[\u00f1]/g, 'n')
+    .replace(/[\u00d1]/g, 'N')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
 
 export interface ExistingImage {
   id: string;
@@ -3435,18 +3513,46 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     };
   }, [previews]);
 
+  // Reinicia el estado cuando cambian los datos iniciales (necesario con Astro ClientRouter)
+  useEffect(() => {
+    setName(initialData?.name || '');
+    setSlug(initialData?.slug || '');
+    setDescription(initialData?.description || '');
+    setPrice(initialData?.price || '');
+    setCategoryId(initialData?.categoryId || '');
+    setSaleType(initialData?.saleType || 'docena');
+    setProductionTime(initialData?.productionTime || '');
+    setIsActive(initialData?.isActive ?? true);
+    setIsFeatured(initialData?.isFeatured ?? false);
+    setFeatures((initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f })));
+    setCustomizations((initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c })));
+    setExistingImages(initialData?.existingImages || []);
+    setDeletedExistingImagePaths([]);
+    setSelectedFiles([]);
+    setPreviews([]);
+    setError('');
+    setIsSlugManual(false);
+    setIsDeleteModalOpen(false);
+  }, [initialData?.id]);
+
   // Generamos el slug directamente al teclear para respuesta instántanea
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setName(value);
     if (!isEdit && !isSlugManual) {
-      setSlug(generateSlug(value));
+      setSlug(toSlug(value));
     }
   };
 
   const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSlug(e.target.value);
-    setIsSlugManual(true);
+    const value = e.target.value;
+    setSlug(value);
+    // Si el usuario borra completamente el slug, volvemos al modo automático
+    if (value === '') {
+      setIsSlugManual(false);
+    } else {
+      setIsSlugManual(true);
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -3702,35 +3808,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     </form>
   );
 };
-</file>
-
-<file path="astro.config.mjs">
-import { defineConfig } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
-import react from '@astrojs/react';
-import tailwindcss from '@tailwindcss/vite';
-
-export default defineConfig({
-  output: 'server',
-  adapter: cloudflare({
-    platformProxy: {
-      enabled: true
-    }
-  }),
-  integrations: [
-    react()
-  ],
-  vite: {
-    plugins: [tailwindcss()],
-    build: {
-      // cssMinify: 'lightningcss'
-    }
-  },
-  prefetch: {
-    prefetchAll: false,
-    defaultStrategy: 'hover'
-  }
-});
 </file>
 
 <file path="package.json">

@@ -7,6 +7,11 @@ import { navigate } from 'astro:transitions/client';
 import { generateSlug } from '@/core/utils/slug';
 import { ConfirmModal } from '@/ui/components/ConfirmModal';
 
+// Generador de IDs universal para evitar bloqueos
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
 export interface ExistingImage {
   id: string;
   url: string;
@@ -54,10 +59,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
 
   const [features, setFeatures] = useState<{id: string, value: string}[]>(
-    (initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f }))
+    (initialData?.features || []).map(f => ({ id: generateId(), value: f }))
   );
   const [customizations, setCustomizations] = useState<{id: string, value: string}[]>(
-    (initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c }))
+    (initialData?.customizations || []).map(c => ({ id: generateId(), value: c }))
   );
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -72,7 +77,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSlugManual, setIsSlugManual] = useState(false);
 
-  // Limpieza de memoria (Object URLs) al desmontar
   useEffect(() => {
     return () => {
       previews.forEach(p => {
@@ -81,9 +85,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     };
   }, [previews]);
 
-  // Reinicia el estado del formulario cuando cambian los datos iniciales.
-  // Esto es necesario porque Astro View Transitions puede reutilizar el componente
-  // entre navegaciones, dejando isSlugManual en true de una sesión anterior.
   useEffect(() => {
     setName(initialData?.name || '');
     setSlug(initialData?.slug || '');
@@ -94,8 +95,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     setProductionTime(initialData?.productionTime || '');
     setIsActive(initialData?.isActive ?? true);
     setIsFeatured(initialData?.isFeatured ?? false);
-    setFeatures((initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f })));
-    setCustomizations((initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c })));
+    setFeatures((initialData?.features || []).map(f => ({ id: generateId(), value: f })));
+    setCustomizations((initialData?.customizations || []).map(c => ({ id: generateId(), value: c })));
     setExistingImages(initialData?.existingImages || []);
     setDeletedExistingImagePaths([]);
     setSelectedFiles([]);
@@ -105,7 +106,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     setIsDeleteModalOpen(false);
   }, [initialData?.id]);
 
-  // Generamos el slug directamente al teclear para respuesta instántanea
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setName(value);
@@ -117,7 +117,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSlug(value);
-    // Si el usuario borra completamente el slug, volvemos al modo automático
     if (value === '') {
       setIsSlugManual(false);
     } else {
@@ -130,7 +129,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
       const filesArray = Array.from(e.target.files);
       setSelectedFiles(prev => [...prev, ...filesArray]);
       const newPreviews = filesArray.map(file => ({
-        id: crypto.randomUUID(),
+        id: generateId(),
         url: URL.createObjectURL(file)
       }));
       setPreviews(prev => [...prev, ...newPreviews]);
@@ -315,16 +314,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
           label="Características"
           placeholder="Ej. MDF de alta calidad 3mm"
           items={features}
-          onAdd={(val) => setFeatures([...features, { id: crypto.randomUUID(), value: val }])}
-          onRemove={(id) => setFeatures(features.filter((f) => f.id !== id))}
+          onAdd={(val) => setFeatures(prev => [...prev, { id: generateId(), value: val }])}
+          onRemove={(id) => setFeatures(prev => prev.filter((f) => f.id !== id))}
         />
 
         <DynamicListInput 
           label="Personalización"
           placeholder="Ej. Nombre de la Quinceañera"
           items={customizations}
-          onAdd={(val) => setCustomizations([...customizations, { id: crypto.randomUUID(), value: val }])}
-          onRemove={(id) => setCustomizations(customizations.filter((c) => c.id !== id))}
+          onAdd={(val) => setCustomizations(prev => [...prev, { id: generateId(), value: val }])}
+          onRemove={(id) => setCustomizations(prev => prev.filter((c) => c.id !== id))}
         />
       </div>
 

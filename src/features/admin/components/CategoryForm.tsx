@@ -20,9 +20,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSlugManual, setIsSlugManual] = useState(false);
 
-  // Reinicia el estado del formulario cuando cambian los datos iniciales.
-  // Esto es necesario porque Astro View Transitions puede reutilizar el componente
-  // entre navegaciones, dejando isSlugManual en true de una sesión anterior.
   useEffect(() => {
     setName(initialData?.name || '');
     setSlug(initialData?.slug || '');
@@ -32,7 +29,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
     setIsDeleteModalOpen(false);
   }, [initialData?.id]);
 
-  // Generamos el slug directamente al teclear para garantizar respuesta inmediata
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setName(value);
@@ -44,11 +40,10 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
   const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSlug(value);
-    // Si el usuario borra completamente el slug, volvemos al modo automático
     if (value === '') {
       setIsSlugManual(false);
     } else {
-      setIsSlugManual(true); // Si el usuario edita el slug manualmente, dejamos de autogenerarlo
+      setIsSlugManual(true);
     }
   };
 
