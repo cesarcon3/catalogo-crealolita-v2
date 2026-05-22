@@ -1,0 +1,230 @@
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import Button from '@/ui/components/Button.astro';
+---
+
+<BaseLayout title="Página no encontrada | 404">
+  <div class="min-h-[75vh] flex flex-col items-center justify-center text-center px-4 relative overflow-hidden">
+    
+    <div class="cnc-scene mt-8 mb-12">
+      <div class="cnc-rail"></div>
+      
+      <div class="cnc-laser-head">
+        <div class="cnc-module"></div>
+        <div class="cnc-lens"></div>
+        <div class="cnc-beam"></div>
+        <div class="cnc-sparks"></div>
+      </div>
+
+      <div class="cnc-mdf">
+        <div class="cnc-text-wrapper">
+          <div class="cnc-engraved">404</div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="text-3xl font-bold text-brand-text mb-4 font-serif">
+      ¡Ups! El láser cortó fuera de las coordenadas
+    </h2>
+    <p class="text-brand-muted max-w-md mx-auto mb-8 leading-relaxed">
+      Verificamos los ejes X e Y, pero la página que buscas no existe o el diseño fue borrado. Recalibremos los motores y volvamos al inicio.
+    </p>
+
+    <Button href="/" variant="primary" size="lg">
+      ← Volver al Catálogo
+    </Button>
+    
+  </div>
+</BaseLayout>
+
+<style>
+  /* === ARTE CSS PURO === */
+  
+  .cnc-scene {
+    width: 320px;
+    height: 180px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  /* Riel superior por donde se mueve el láser */
+  .cnc-rail {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 12px;
+    background: linear-gradient(to bottom, #94a3b8, #475569);
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 -2px 5px rgba(0,0,0,0.3);
+  }
+
+  /* Cama de MDF */
+  .cnc-mdf {
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
+    right: 10px;
+    height: 45px;
+    background: #e0b976;
+    border-bottom: 10px solid #8b5a2b;
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+  }
+
+  /* Contenedor exacto de 200px para cuadrar la matemática del láser */
+  .cnc-text-wrapper {
+    width: 200px;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Texto 404 simulando grabado profundo */
+  .cnc-engraved {
+    font-family: Georgia, serif;
+    font-size: 65px;
+    font-weight: 900;
+    line-height: 48px;
+    color: #2b1104;
+    text-align: center;
+    letter-spacing: 5px;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.4), -1px -2px 3px rgba(0,0,0,0.9);
+    
+    clip-path: inset(0 100% 0 0);
+    /* Ciclo completo ida+vuelta en un solo keyframe — sin alternate */
+    animation: text-reveal 6s ease-in-out infinite;
+  }
+
+  /* Cabezal Láser Completo */
+  .cnc-laser-head {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    margin-left: -120px; 
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+    /* Ciclo completo ida+vuelta en un solo keyframe — sin alternate */
+    animation: laser-travel 6s ease-in-out infinite;
+  }
+
+  /* Módulo Negro con disipador */
+  .cnc-module {
+    width: 36px;
+    height: 45px;
+    background-color: #1e293b;
+    border-radius: 4px;
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent, transparent 3px,
+      #0f172a 3px, #0f172a 5px
+    );
+    border-top: 4px solid #0f172a;
+  }
+
+  /* Boquilla dorada */
+  .cnc-lens {
+    width: 12px;
+    height: 10px;
+    background: #d4af37;
+    border-radius: 0 0 3px 3px;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.5);
+  }
+
+  /* Haz azul cortando */
+  .cnc-beam {
+    width: 2px;
+    height: 52px;
+    background: #93c5fd;
+    box-shadow: 0 0 12px 4px #3b82f6, 0 0 4px 1px #fff;
+    animation: beam-flicker 0.05s infinite alternate;
+  }
+
+  /* Chispas y fuego en el material */
+  .cnc-sparks {
+    width: 16px;
+    height: 16px;
+    background: #ea580c;
+    border-radius: 50%;
+    position: absolute;
+    bottom: -6px;
+    filter: blur(1px);
+    box-shadow: 0 0 20px 8px rgba(234, 88, 12, 0.8), 0 0 8px 3px #fef08a;
+    animation: spark-pulse 0.1s infinite alternate;
+  }
+
+  /* Partículas saltando */
+  .cnc-sparks::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 5px;
+    width: 4px;
+    height: 4px;
+    background: #fde047;
+    border-radius: 50%;
+    box-shadow: -12px -15px 0 1px #f97316, 15px -8px 0 -1px #fef08a;
+    animation: flying-particles 0.3s infinite linear;
+  }
+
+  /* === ANIMACIONES === */
+
+  /*
+    Ciclo completo sin alternate:
+    0%   → posición inicial (izquierda)
+    50%  → posición final (derecha)  — ease-in-out por keyframe
+    100% → vuelve al inicio (izquierda) — ease-in-out por keyframe
+    El ease-in-out se aplica individualmente a cada mitad del recorrido.
+  */
+  @keyframes laser-travel {
+    0%   {
+      transform: translateX(0);
+      animation-timing-function: ease-in-out;
+    }
+    50%  {
+      transform: translateX(200px);
+      animation-timing-function: ease-in-out;
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  /* Exactamente sincronizado con laser-travel */
+  @keyframes text-reveal {
+    0%   {
+      clip-path: inset(0 100% 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    50%  {
+      clip-path: inset(0 0% 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    100% {
+      clip-path: inset(0 100% 0 0);
+    }
+  }
+
+  /* Intermitencia rápida de la luz láser */
+  @keyframes beam-flicker {
+    from { opacity: 0.7; width: 2px; }
+    to   { opacity: 1;   width: 3px; }
+  }
+
+  /* Pulso del fuego/chispa principal */
+  @keyframes spark-pulse {
+    from { transform: scale(0.8); opacity: 0.8; }
+    to   { transform: scale(1.4); opacity: 1;   }
+  }
+
+  /* Partículas erráticas que saltan hacia arriba */
+  @keyframes flying-particles {
+    0%   { transform: translateY(0)     scale(1); opacity: 1; }
+    100% { transform: translateY(-25px) scale(0); opacity: 0; }
+  }
+</style>
