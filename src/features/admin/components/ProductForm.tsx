@@ -81,6 +81,30 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
     };
   }, [previews]);
 
+  // Reinicia el estado del formulario cuando cambian los datos iniciales.
+  // Esto es necesario porque Astro View Transitions puede reutilizar el componente
+  // entre navegaciones, dejando isSlugManual en true de una sesión anterior.
+  useEffect(() => {
+    setName(initialData?.name || '');
+    setSlug(initialData?.slug || '');
+    setDescription(initialData?.description || '');
+    setPrice(initialData?.price || '');
+    setCategoryId(initialData?.categoryId || '');
+    setSaleType(initialData?.saleType || 'docena');
+    setProductionTime(initialData?.productionTime || '');
+    setIsActive(initialData?.isActive ?? true);
+    setIsFeatured(initialData?.isFeatured ?? false);
+    setFeatures((initialData?.features || []).map(f => ({ id: crypto.randomUUID(), value: f })));
+    setCustomizations((initialData?.customizations || []).map(c => ({ id: crypto.randomUUID(), value: c })));
+    setExistingImages(initialData?.existingImages || []);
+    setDeletedExistingImagePaths([]);
+    setSelectedFiles([]);
+    setPreviews([]);
+    setError('');
+    setIsSlugManual(false);
+    setIsDeleteModalOpen(false);
+  }, [initialData?.id]);
+
   // Generamos el slug directamente al teclear para respuesta instántanea
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -91,8 +115,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ categories, initialDat
   };
 
   const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSlug(e.target.value);
-    setIsSlugManual(true);
+    const value = e.target.value;
+    setSlug(value);
+    // Si el usuario borra completamente el slug, volvemos al modo automático
+    if (value === '') {
+      setIsSlugManual(false);
+    } else {
+      setIsSlugManual(true);
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
