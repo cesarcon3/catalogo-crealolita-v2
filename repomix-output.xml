@@ -566,83 +566,6 @@ export const CategoryList: React.FC<CategoryListProps> = ({ initialCategories })
 };
 </file>
 
-<file path="src/features/admin/components/DynamicListInput.tsx">
-import React, { useState } from 'react';
-import { Button } from '@/ui/components/Button';
-
-interface DynamicListInputProps {
-  label: string;
-  items: { id: string; value: string }[];
-  onAdd: (item: string) => void;
-  onRemove: (id: string) => void;
-  placeholder?: string;
-}
-
-export const DynamicListInput: React.FC<DynamicListInputProps> = ({ 
-  label, 
-  items, 
-  onAdd, 
-  onRemove,
-  placeholder = ''
-}) => {
-  const [currentValue, setCurrentValue] = useState('');
-  const inputId = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
-
-  const handleAdd = () => {
-    if (currentValue.trim()) {
-      onAdd(currentValue.trim());
-      setCurrentValue('');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAdd();
-    }
-  };
-
-  return (
-    <div>
-      <label htmlFor={inputId} className="block text-sm font-semibold text-brand-text mb-2">{label}</label>
-      <div className="flex gap-2">
-        <input
-          id={inputId}
-          type="text"
-          value={currentValue}
-          onChange={(e) => setCurrentValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="flex-1 px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
-        />
-        <Button type="button" onClick={handleAdd} variant="primary" className="!px-4">
-          +
-        </Button>
-      </div>
-      
-      {items.length > 0 && (
-        <ul className="mt-3 space-y-1.5">
-          {items.map((item) => (
-            <li key={item.id} className="flex justify-between items-center bg-cream-100 px-3 py-1.5 rounded-lg text-sm text-brand-text border border-brand-border">
-              <span>{item.value}</span>
-              <button 
-                type="button" 
-                onClick={() => onRemove(item.id)} 
-                className="text-red-500 font-bold hover:text-red-700 px-2"
-                title="Eliminar elemento"
-                aria-label={`Eliminar ${item.value}`}
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-</file>
-
 <file path="src/features/admin/components/LoginForm.astro">
 ---
 import Button from '@/ui/components/Button.astro';
@@ -699,7 +622,7 @@ const { errorMessage = '', defaultEmail = '' } = Astro.props;
 </file>
 
 <file path="src/features/products/components/ImageGallery.tsx">
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ImageGalleryProps {
   productName: string;
@@ -713,6 +636,10 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ productName, images 
     validImages.find(i => i.is_primary)?.url || validImages[0]?.url || ''
   );
 
+  useEffect(() => {
+    setMainImage(validImages.find(i => i.is_primary)?.url || validImages[0]?.url || '');
+  }, [images]);
+
   if (validImages.length === 0) {
     return (
       <div className="aspect-square bg-cream-100 rounded-2xl flex items-center justify-center border border-brand-border">
@@ -723,18 +650,35 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ productName, images 
 
   return (
     <div className="space-y-4">
-      <div className="aspect-square bg-cream-100 rounded-2xl overflow-hidden border border-brand-border shadow-sm">
-        <img 
-          src={mainImage} 
-          alt={productName}
-          width="800"
-          height="800"
-          decoding="async"
-          fetchPriority="high"
-          className="w-full h-full object-cover transition-opacity duration-300"
-        />
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="relative aspect-square w-full bg-cream-200 rounded-2xl overflow-hidden border border-brand-border shadow-sm group">
+        
+        {/* FOCOS DE LUZ ESTÁTICOS (Le dan vida y profundidad al cristal sin imitar la foto) */}
+        <div className="absolute -top-10 -left-10 w-3/4 h-3/4 bg-white rounded-full blur-3xl opacity-90 pointer-events-none" />
+        <div className="absolute -bottom-10 -right-10 w-3/4 h-3/4 bg-gold-light/30 rounded-full blur-3xl opacity-60 pointer-events-none" />
+
+        {/* CRISTAL ESMERILADO (Frosted Glass real, claro y sutil) */}
+        <div className="absolute inset-0 z-0 bg-gold-light/30 backdrop-blur-xl border border-white/60 pointer-events-none" />
+
+        {/* IMAGEN PRINCIPAL (Aislada, completa y sin recortes) */}
+        <div className="absolute inset-0 z-10 p-6 flex items-center justify-center">
+          <img 
+            key={mainImage}
+            src={mainImage} 
+            alt={productName}
+            loading="eager"
+            decoding="sync"
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'contain' 
+            }}
+            className="drop-shadow-xl select-none"
+          />
+        </div>
       </div>
 
+      {/* GALERÍA DE MINIATURAS */}
       {validImages.length > 1 && (
         <div className="grid grid-cols-4 gap-4">
           {validImages.map((img, idx) => (
@@ -742,20 +686,29 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ productName, images 
               key={idx}
               type="button"
               onClick={() => setMainImage(img.url)}
-              className={`aspect-square bg-cream-100 rounded-xl overflow-hidden border-2 transition-all focus:outline-none ${
+              className={`relative aspect-square w-full bg-cream-200 rounded-xl overflow-hidden border-2 transition-all focus:outline-none ${
                 mainImage === img.url 
                   ? 'border-gold shadow-md scale-95 opacity-100' 
-                  : 'border-brand-border hover:border-gold-light opacity-70 hover:opacity-100'
+                  : 'border-brand-border hover:border-gold-light opacity-80 hover:opacity-100'
               }`}
             >
-              <img 
-                src={img.url} 
-                alt={`Vista ${idx + 1}`} 
-                width="200"
-                height="200"
-                loading="lazy"
-                className="w-full h-full object-cover" 
-              />
+              {/* FOCOS DE LUZ MINIATURAS */}
+              <div className="absolute -top-4 -left-4 w-full h-full bg-white rounded-full blur-xl opacity-90 pointer-events-none" />
+              <div className="absolute -bottom-4 -right-4 w-full h-full bg-gold-light/30 rounded-full blur-xl opacity-60 pointer-events-none" />
+
+              {/* CRISTAL MINIATURA */}
+              <div className="absolute inset-0 z-0 bg-white/30 backdrop-blur-md border border-white/50 pointer-events-none" />
+              
+              {/* IMAGEN MINIATURA */}
+              <div className="absolute inset-0 z-10 p-2 flex items-center justify-center">
+                <img 
+                  src={img.url} 
+                  alt={`Vista ${idx + 1}`} 
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                  className="drop-shadow-sm select-none"
+                />
+              </div>
             </button>
           ))}
         </div>
@@ -867,91 +820,6 @@ export const OrderCalculator: React.FC<OrderCalculatorProps> = ({
     </div>
   );
 };
-</file>
-
-<file path="src/features/products/components/ProductCard.astro">
----
-import type { PublicProduct } from '../services/publicProducts';
-
-interface Props {
-  product: PublicProduct;
-}
-
-const { product } = Astro.props;
-
-const unitPrice = product.sale_type === 'docena' ? (product.price / 12).toFixed(2) : null;
----
-
-<article class="group bg-white rounded-2xl overflow-hidden border border-brand-border shadow-sm hover:shadow-xl hover:border-gold-light transition-all duration-300 flex flex-col h-full relative">
-  
-  {product.is_featured && (
-    <span class="absolute top-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm">
-      ⭐ Destacado
-    </span>
-  )}
-  <span class="absolute top-3 left-3 bg-gold text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm capitalize">
-    {product.sale_type === 'mixto' ? 'Docena / Detal' : `Por ${product.sale_type}`}
-  </span>
-
-  <a href={`/producto/${product.slug}`} class="relative h-64 overflow-hidden bg-cream-100 flex-shrink-0 block">
-    {product.primary_image_url ? (
-      <img 
-        src={product.primary_image_url} 
-        alt={product.name}
-        width="400"
-        height="256"
-        loading="lazy"
-        decoding="async"
-        class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-      />
-    ) : (
-      <div class="w-full h-full flex flex-col items-center justify-center text-brand-muted">
-        <span class="text-3xl mb-2">🖼️</span>
-        <span class="text-sm font-medium">Sin imagen</span>
-      </div>
-    )}
-  </a>
-
-  <div class="p-5 flex flex-col flex-1">
-    <div class="mb-2">
-      <span class="text-xs font-semibold text-gold-dark uppercase tracking-wider">
-        {product.categories?.name || 'Varios'}
-      </span>
-    </div>
-    
-    <a href={`/producto/${product.slug}`} class="block mb-2">
-      <h3 class="font-serif text-xl font-bold text-brand-text leading-tight group-hover:text-gold-dark transition-colors">
-        {product.name}
-      </h3>
-    </a>
-    
-    <p class="text-sm text-brand-muted line-clamp-2 mb-4 flex-1">
-      {product.description}
-    </p>
-
-    <div class="mt-auto pt-4 border-t border-cream-200">
-      <div class="flex justify-between items-end mb-4">
-        <div>
-          <span class="text-sm text-gold-dark font-bold">{product.currency}</span>
-          <span class="text-2xl font-bold text-brand-text ml-1">{product.price.toFixed(2)}</span>
-        </div>
-        {unitPrice && (
-          <div class="text-right">
-            <span class="block text-xs text-brand-muted">Ref. Unidad</span>
-            <span class="text-sm font-semibold text-brand-muted">{product.currency} {unitPrice}</span>
-          </div>
-        )}
-      </div>
-
-      <a 
-        href={`/producto/${product.slug}`} 
-        class="w-full block text-center bg-gold text-white font-semibold py-2.5 rounded-lg hover:bg-gold-dark transition-colors shadow-sm"
-      >
-        Ver Detalles →
-      </a>
-    </div>
-  </div>
-</article>
 </file>
 
 <file path="src/features/products/services/publicProducts.ts">
@@ -1220,83 +1088,6 @@ import { CategoryForm } from '@/features/admin/components/CategoryForm';
     <h1 class="text-3xl font-bold text-gold-dark">Crear Categoría</h1>
   </div>
   <CategoryForm client:load />
-</AdminLayout>
-</file>
-
-<file path="src/pages/admin/productos/editar/[id].astro">
----
-import AdminLayout from '@/ui/layouts/AdminLayout.astro';
-import { ProductForm, type InitialProductData } from '@/features/admin/components/ProductForm';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import type { Category, SaleType } from '@/core/types/database';
-
-const { id } = Astro.params;
-
-if (!id) {
-  return Astro.redirect('/admin/productos');
-}
-
-const supabase = createSupabaseServerClient(Astro.cookies);
-
-// 1. Obtener categorías
-const { data: catData } = await supabase.from('categories').select('*').order('name');
-const categories = (catData as Category[]) || [];
-
-// 2. Obtener datos del producto con sus imágenes
-const { data: productData, error } = await supabase
-  .from('products')
-  .select(`
-    *,
-    product_images (id, storage_path, is_primary, display_order)
-  `)
-  .eq('id', id)
-  .single();
-
-if (error || !productData) {
-  return Astro.redirect('/admin/productos');
-}
-
-// 3. Obtener URLs públicas de las imágenes
-const existingImages = (productData.product_images || [])
-  .sort((a: any, b: any) => a.display_order - b.display_order)
-  .map((img: any) => {
-    const { data } = supabase.storage.from('product-images').getPublicUrl(img.storage_path);
-    return {
-      id: img.id,
-      path: img.storage_path,
-      url: data.publicUrl,
-      is_primary: img.is_primary
-    };
-  });
-
-// 4. Formatear datos para la isla
-const initialData: InitialProductData = {
-  id: productData.id,
-  name: productData.name,
-  slug: productData.slug,
-  description: productData.description || '',
-  price: productData.price.toString(),
-  categoryId: productData.category_id || '',
-  saleType: productData.sale_type as SaleType,
-  productionTime: productData.production_time || '',
-  isActive: productData.is_active,
-  isFeatured: productData.is_featured,
-  features: Array.isArray(productData.features) ? productData.features : [],
-  customizations: Array.isArray(productData.customization_options) ? productData.customization_options : [],
-  existingImages
-};
----
-
-<AdminLayout title="Editar Producto">
-  <div class="mb-8">
-    <div class="text-sm text-brand-muted mb-2">
-      <a href="/admin/productos" class="hover:text-gold transition-colors">← Volver al listado</a>
-    </div>
-    <h1 class="text-3xl font-bold text-gold-dark">Editar Producto</h1>
-    <p class="text-brand-muted mt-1">Actualiza los datos, gestiona imágenes o elimina el registro.</p>
-  </div>
-
-  <ProductForm categories={categories} initialData={initialData} client:load />
 </AdminLayout>
 </file>
 
@@ -1641,444 +1432,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 };
-</file>
-
-<file path="src/pages/api/products/[id].ts">
-import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '../../../lib/supabase-server';
-import type { SaleType } from '@/core/types/database';
-import { validateImageFile, parseStringArray, VALID_SALE_TYPES } from '@/lib/api-validators';
-
-interface StoragePathItem {
-  storage_path: string;
-}
-
-export const PUT: APIRoute = async ({ params, request, cookies }) => {
-  try {
-    const id = params.id;
-    const supabase = createSupabaseServerClient(cookies);
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-
-    const formData = await request.formData();
-    
-    const name = formData.get('name')?.toString();
-    const slug = formData.get('slug')?.toString();
-    const description = formData.get('description')?.toString() || null;
-    const category_id = formData.get('category_id')?.toString() || null;
-    const production_time = formData.get('production_time')?.toString() || null;
-    
-    const is_active = formData.get('is_active') === 'true';
-    const is_featured = formData.get('is_featured') === 'true';
-
-    if (!name || !slug || !id) {
-      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
-    }
-
-    const priceStr = formData.get('price')?.toString();
-    if (!priceStr) {
-      return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
-    }
-    const parsedPrice = parseFloat(priceStr);
-    if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 999999.99) {
-      return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
-    }
-
-    const sale_type = formData.get('sale_type')?.toString() as SaleType;
-    if (!VALID_SALE_TYPES.includes(sale_type)) {
-      return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
-    }
-
-    const features = parseStringArray(formData.get('features')?.toString());
-    const customization_options = parseStringArray(formData.get('customization_options')?.toString());
-    
-    const deletedImages = parseStringArray(formData.get('deleted_images')?.toString());
-    const newImages = formData.getAll('images') as File[];
-
-    const { error: updateError } = await supabase
-      .from('products')
-      .update({
-        name,
-        slug,
-        description,
-        price: parsedPrice,
-        category_id,
-        sale_type,
-        production_time,
-        customization_options,
-        features,
-        is_active,
-        is_featured,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
-    }
-
-    if (deletedImages.length > 0) {
-      const { data: validImages } = await supabase
-        .from('product_images')
-        .select('storage_path')
-        .eq('product_id', id);
-        
-      const validPaths = new Set(validImages?.map((i: StoragePathItem) => i.storage_path) || []);
-      const safeDeletedImages = deletedImages.filter((path: string) => validPaths.has(path));
-
-      if (safeDeletedImages.length > 0) {
-        await supabase.storage.from('product-images').remove(safeDeletedImages);
-        await supabase.from('product_images').delete().in('storage_path', safeDeletedImages);
-      }
-    }
-
-    if (newImages.length > 0) {
-      const imageRecords = [];
-      for (let i = 0; i < newImages.length; i++) {
-        const file = newImages[i];
-        if (!file || file.size === 0) continue;
-        
-        const validationError = validateImageFile(file);
-        if (validationError) {
-           return new Response(JSON.stringify({ error: validationError }), { status: 400 });
-        }
-        
-        const fileExt = file.name.split('.').pop()?.toLowerCase();
-        const fileName = `${id}/${crypto.randomUUID()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(fileName, file);
-
-        if (!uploadError) {
-          imageRecords.push({
-            product_id: id,
-            storage_path: fileName,
-            is_primary: false,
-            display_order: 99 + i
-          });
-        }
-      }
-
-      if (imageRecords.length > 0) {
-        await supabase.from('product_images').insert(imageRecords);
-      }
-    }
-
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error interno del servidor';
-    console.error('[API Error]:', err);
-    return new Response(
-      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
-      { status: 500 }
-    );
-  }
-};
-
-export const DELETE: APIRoute = async ({ params, cookies }) => {
-  try {
-    const id = params.id;
-    const supabase = createSupabaseServerClient(cookies);
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-
-    if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
-
-    const { data: images } = await supabase
-      .from('product_images')
-      .select('storage_path')
-      .eq('product_id', id);
-
-    if (images && images.length > 0) {
-      const paths = images.map((img: StoragePathItem) => img.storage_path);
-      await supabase.storage.from('product-images').remove(paths);
-    }
-
-    const { error } = await supabase.from('products').delete().eq('id', id);
-
-    if (error) throw new Error(error.message);
-
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error interno del servidor';
-    console.error('[API Error]:', err);
-    return new Response(
-      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
-      { status: 500 }
-    );
-  }
-};
-</file>
-
-<file path="src/pages/api/products/index.ts">
-import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '../../../lib/supabase-server';
-import type { SaleType } from '@/core/types/database';
-import { validateImageFile, parseStringArray, VALID_SALE_TYPES } from '@/lib/api-validators';
-
-export const POST: APIRoute = async ({ request, cookies }) => {
-  try {
-    const supabase = createSupabaseServerClient(cookies);
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-    }
-
-    const formData = await request.formData();
-    
-    const name = formData.get('name')?.toString();
-    const slug = formData.get('slug')?.toString();
-    const description = formData.get('description')?.toString() || null;
-    const category_id = formData.get('category_id')?.toString() || null;
-    const production_time = formData.get('production_time')?.toString() || null;
-    
-    const is_active = formData.get('is_active') === 'true';
-    const is_featured = formData.get('is_featured') === 'true';
-
-    if (!name || !slug) {
-      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
-    }
-
-    const priceStr = formData.get('price')?.toString();
-    if (!priceStr) {
-      return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
-    }
-    const parsedPrice = parseFloat(priceStr);
-    if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 999999.99) {
-      return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
-    }
-
-    const sale_type = formData.get('sale_type')?.toString() as SaleType;
-    if (!VALID_SALE_TYPES.includes(sale_type)) {
-      return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
-    }
-
-    const features = parseStringArray(formData.get('features')?.toString());
-    const customization_options = parseStringArray(formData.get('customization_options')?.toString());
-
-    const images = formData.getAll('images') as File[];
-
-    const { data: productData, error: productError } = await supabase
-      .from('products')
-      .insert([{
-        name,
-        slug,
-        description,
-        price: parsedPrice,
-        category_id,
-        sale_type,
-        production_time,
-        customization_options,
-        features,
-        is_active,
-        is_featured
-      }])
-      .select()
-      .single();
-
-    if (productError || !productData) {
-      return new Response(JSON.stringify({ error: productError?.message || 'Error al crear producto' }), { status: 500 });
-    }
-
-    if (images.length > 0) {
-      const imageRecords = [];
-      
-      for (let i = 0; i < images.length; i++) {
-        const file = images[i];
-        
-        if (!file || file.size === 0) continue;
-        
-        const validationError = validateImageFile(file);
-        if (validationError) {
-           return new Response(JSON.stringify({ error: validationError }), { status: 400 });
-        }
-        
-        const fileExt = file.name.split('.').pop()?.toLowerCase();
-        const fileName = `${productData.id}/${crypto.randomUUID()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(fileName, file);
-
-        if (!uploadError) {
-          imageRecords.push({
-            product_id: productData.id,
-            storage_path: fileName,
-            is_primary: i === 0,
-            display_order: i
-          });
-        }
-      }
-
-      if (imageRecords.length > 0) {
-        await supabase.from('product_images').insert(imageRecords);
-      }
-    }
-
-    return new Response(JSON.stringify({ success: true, data: productData }), { status: 201 });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error interno del servidor';
-    console.error('[API Error]:', err);
-    return new Response(
-      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
-      { status: 500 }
-    );
-  }
-};
-</file>
-
-<file path="src/pages/producto/[slug].astro">
----
-import BaseLayout from '@/ui/layouts/BaseLayout.astro';
-import { getProductBySlug } from '@/features/products/services/publicProducts';
-import { OrderCalculator } from '@/features/products/components/OrderCalculator';
-import { ImageGallery } from '@/features/products/components/ImageGallery';
-
-const { slug } = Astro.params;
-
-if (!slug) {
-  return Astro.redirect('/404');
-}
-
-const product = await getProductBySlug(slug);
-
-if (!product) {
-  return Astro.redirect('/404');
-}
-
-const features: string[] = Array.isArray(product.features) ? (product.features as string[]) : [];
-const customizations: string[] = Array.isArray(product.customization_options) ? (product.customization_options as string[]) : [];
-
-const primaryImage = product.images.find(i => i.is_primary)?.url || product.images[0]?.url;
-
-const layoutProps = {
-  title: product.name,
-  ...(product.description ? { description: product.description } : {}),
-  ...(primaryImage ? { image: primaryImage } : {})
-};
----
-
-<BaseLayout {...layoutProps}>
-  
-  <script type="application/ld+json" nonce={Astro.locals.cspNonce} set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "description": product.description || "Diseño en MDF",
-    "image": product.images.map(i => i.url).filter(Boolean),
-    "offers": {
-      "@type": "Offer",
-      "price": product.price,
-      "priceCurrency": product.currency || "USD",
-      "availability": product.is_active ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
-    }
-  })} />
-
-  <nav aria-label="Breadcrumb" class="mb-8">
-    <ol class="flex items-center flex-wrap gap-2 text-sm text-brand-muted">
-      <li>
-        <a href="/" class="hover:text-gold transition-colors flex items-center gap-1">
-          <span>🏠</span> Inicio
-        </a>
-      </li>
-      <li><span class="text-brand-border">/</span></li>
-      
-      {product.categories && (
-        <>
-          <li>
-            <a href={`/categoria/${product.categories.slug}`} class="hover:text-gold transition-colors">
-              {product.categories.name}
-            </a>
-          </li>
-          <li><span class="text-brand-border">/</span></li>
-        </>
-      )}
-      
-      <li class="font-semibold text-brand-text truncate max-w-[200px] sm:max-w-md" aria-current="page" title={product.name}>
-        {product.name}
-      </li>
-    </ol>
-  </nav>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-    
-    <ImageGallery client:load images={product.images} productName={product.name} />
-
-    <div class="flex flex-col">
-      {product.categories && (
-        <span class="text-sm font-bold text-gold-dark tracking-wider uppercase mb-2">
-          {product.categories.name}
-        </span>
-      )}
-      
-      <h1 class="text-4xl font-bold font-serif text-brand-text mb-4 leading-tight">
-        {product.name}
-      </h1>
-      
-      <p class="text-lg text-brand-muted mb-8 leading-relaxed">
-        {product.description}
-      </p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-brand-border">
-        {features.length > 0 && (
-          <div>
-            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
-              📋 Características
-            </h3>
-            <ul class="space-y-2">
-              {features.map(feature => (
-                <li class="flex items-start text-brand-muted">
-                  <span class="text-gold mr-2 mt-0.5">✓</span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {customizations.length > 0 && (
-          <div>
-            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
-              ✨ Personalización
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              {customizations.map(custom => (
-                <span class="bg-cream-200 text-brand-text border border-brand-border text-sm px-3 py-1 rounded-full">
-                  {custom}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div class="mb-8">
-        {product.production_time && (
-          <p class="text-sm text-brand-muted flex items-center gap-2">
-            <span class="text-xl">⏱️</span> 
-            <strong>Tiempo de producción:</strong> {product.production_time}
-          </p>
-        )}
-      </div>
-
-      <div class="mt-auto">
-        <OrderCalculator 
-          client:visible
-          productName={product.name}
-          productSlug={product.slug}
-          price={product.price}
-          currency={product.currency || 'USD'}
-          saleType={product.sale_type || 'docena'}
-        />
-      </div>
-
-    </div>
-  </div>
-</BaseLayout>
 </file>
 
 <file path="src/pages/404.astro">
@@ -2664,6 +2017,91 @@ export const SITE_CONFIG = {
 } as const;
 </file>
 
+<file path="src/features/admin/components/DynamicListInput.tsx">
+import React, { useState } from 'react';
+import { Button } from '@/ui/components/Button';
+
+interface DynamicListInputProps {
+  label: string;
+  items: { id: string; value: string }[];
+  onAdd: (item: string) => void;
+  onRemove: (id: string) => void;
+  placeholder?: string;
+}
+
+export const DynamicListInput: React.FC<DynamicListInputProps> = ({ 
+  label, 
+  items, 
+  onAdd, 
+  onRemove,
+  placeholder = ''
+}) => {
+  const [currentValue, setCurrentValue] = useState('');
+  const inputId = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
+
+  const handleAdd = () => {
+    if (currentValue.trim()) {
+      onAdd(currentValue.trim());
+      setCurrentValue('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  // FIX: Si el usuario escribe pero olvida hacer clic en "+", autoguardamos al perder el foco
+  const handleBlur = () => {
+    if (currentValue.trim()) {
+      handleAdd();
+    }
+  };
+
+  return (
+    <div>
+      <label htmlFor={inputId} className="block text-sm font-semibold text-brand-text mb-2">{label}</label>
+      <div className="flex gap-2">
+        <input
+          id={inputId}
+          type="text"
+          value={currentValue}
+          onChange={(e) => setCurrentValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          className="flex-1 px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
+        />
+        <Button type="button" onClick={handleAdd} variant="primary" className="!px-4">
+          +
+        </Button>
+      </div>
+      
+      {items.length > 0 && (
+        <ul className="mt-3 space-y-1.5">
+          {items.map((item) => (
+            <li key={item.id} className="flex justify-between items-center bg-cream-100 px-3 py-1.5 rounded-lg text-sm text-brand-text border border-brand-border">
+              <span>{item.value}</span>
+              <button 
+                type="button" 
+                onClick={() => onRemove(item.id)} 
+                className="text-red-500 font-bold hover:text-red-700 px-2"
+                title="Eliminar elemento"
+                aria-label={`Eliminar ${item.value}`}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+</file>
+
 <file path="src/features/admin/components/ImageUploader.tsx">
 import React, { type ChangeEvent } from 'react';
 import type { ExistingImage } from './ProductForm';
@@ -2888,6 +2326,321 @@ const products = (rawProducts || []).map((product) => {
 </div>
 </file>
 
+<file path="src/features/products/components/ProductCard.astro">
+---
+import type { PublicProduct } from '../services/publicProducts';
+
+interface Props {
+  product: PublicProduct;
+}
+
+const { product } = Astro.props;
+
+const unitPrice = product.sale_type === 'docena' ? (product.price / 12).toFixed(2) : null;
+---
+
+<article class="group bg-white rounded-2xl overflow-hidden border border-brand-border shadow-sm hover:shadow-xl hover:border-gold-light transition-all duration-300 flex flex-col h-full relative">
+  
+  {product.is_featured && (
+    <span class="absolute top-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full z-20 shadow-sm">
+      ⭐ Destacado
+    </span>
+  )}
+  <span class="absolute top-3 left-3 bg-gold text-white text-xs font-bold px-3 py-1 rounded-full z-20 shadow-sm capitalize">
+    {product.sale_type === 'mixto' ? 'Docena / Detal' : `Por ${product.sale_type}`}
+  </span>
+
+  <a href={`/producto/${product.slug}`} class="relative h-64 overflow-hidden block bg-cream-100 flex-shrink-0">
+    {product.primary_image_url ? (
+      <>
+        <div class="absolute inset-0 z-0 overflow-hidden">
+          <img 
+            src={product.primary_image_url} 
+            alt="" 
+            class="w-full h-full object-cover blur-2xl opacity-50 scale-125 transform group-hover:scale-150 transition-transform duration-700"
+            aria-hidden="true"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-cream-100/40 backdrop-blur-md"></div>
+        </div>
+
+        <div class="relative z-10 w-full h-full flex items-center justify-center p-3">
+          <img 
+            src={product.primary_image_url} 
+            alt={product.name}
+            width="400"
+            height="256"
+            loading="lazy"
+            decoding="async"
+            class="max-w-full max-h-full object-contain rounded-md shadow-md transform group-hover:scale-105 transition-transform duration-500 bg-white/50"
+          />
+        </div>
+      </>
+    ) : (
+      <div class="w-full h-full flex flex-col items-center justify-center text-brand-muted relative z-10">
+        <span class="text-3xl mb-2">🖼️</span>
+        <span class="text-sm font-medium">Sin imagen</span>
+      </div>
+    )}
+  </a>
+
+  <div class="p-5 flex flex-col flex-1 relative z-20 bg-white">
+    <div class="mb-2">
+      <span class="text-xs font-semibold text-gold-dark uppercase tracking-wider">
+        {product.categories?.name || 'Varios'}
+      </span>
+    </div>
+    
+    <a href={`/producto/${product.slug}`} class="block mb-2">
+      <h3 class="font-serif text-xl font-bold text-brand-text leading-tight group-hover:text-gold-dark transition-colors line-clamp-2">
+        {product.name}
+      </h3>
+    </a>
+    
+    <p class="text-sm text-brand-muted line-clamp-2 mb-4 flex-1">
+      {product.description}
+    </p>
+
+    <div class="mt-auto pt-4 border-t border-cream-200">
+      <div class="flex justify-between items-end mb-4">
+        <div>
+          <span class="text-sm text-gold-dark font-bold">{product.currency}</span>
+          <span class="text-2xl font-bold text-brand-text ml-1">{product.price.toFixed(2)}</span>
+        </div>
+        {unitPrice && (
+          <div class="text-right">
+            <span class="block text-xs text-brand-muted">Ref. Unidad</span>
+            <span class="text-sm font-semibold text-brand-muted">{product.currency} {unitPrice}</span>
+          </div>
+        )}
+      </div>
+
+      <a 
+        href={`/producto/${product.slug}`} 
+        class="w-full block text-center bg-gold text-white font-semibold py-2.5 rounded-lg hover:bg-gold-dark transition-colors shadow-sm"
+      >
+        Ver Detalles →
+      </a>
+    </div>
+  </div>
+</article>
+</file>
+
+<file path="src/pages/admin/productos/editar/[id].astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import { ProductForm, type InitialProductData } from '@/features/admin/components/ProductForm';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category, SaleType } from '@/core/types/database';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/admin/productos');
+}
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// 1. Obtener categorías
+const { data: catData } = await supabase.from('categories').select('*').order('name');
+const categories = (catData as Category[]) || [];
+
+// 2. Obtener datos del producto
+const { data: productData, error } = await supabase
+  .from('products')
+  .select(`*, product_images (id, storage_path, is_primary, display_order)`)
+  .eq('id', id)
+  .single();
+
+if (error || !productData) {
+  return Astro.redirect('/admin/productos');
+}
+
+// 3. Obtener URLs públicas
+const existingImages = (productData.product_images || [])
+  .sort((a: any, b: any) => a.display_order - b.display_order)
+  .map((img: any) => {
+    const { data } = supabase.storage.from('product-images').getPublicUrl(img.storage_path);
+    return {
+      id: img.id,
+      path: img.storage_path,
+      url: data.publicUrl,
+      is_primary: img.is_primary
+    };
+  });
+
+// FIX: Parseador a prueba de fallos para columnas JSON en Supabase
+const safeParseArray = (val: any): string[] => {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+  }
+  return [];
+};
+
+// 4. Formatear datos
+const initialData: InitialProductData = {
+  id: productData.id,
+  name: productData.name,
+  slug: productData.slug,
+  description: productData.description || '',
+  price: productData.price.toString(),
+  categoryId: productData.category_id || '',
+  saleType: productData.sale_type as SaleType,
+  productionTime: productData.production_time || '',
+  // FIX: Se agregan valores por defecto para asegurar un boolean puro y no null
+  isActive: productData.is_active ?? true,
+  isFeatured: productData.is_featured ?? false,
+  features: safeParseArray(productData.features),
+  customizations: safeParseArray(productData.customization_options),
+  existingImages
+};
+---
+
+<AdminLayout title="Editar Producto">
+  <div class="mb-8">
+    <div class="text-sm text-brand-muted mb-2">
+      <a href="/admin/productos" class="hover:text-gold transition-colors">← Volver al listado</a>
+    </div>
+    <h1 class="text-3xl font-bold text-gold-dark">Editar Producto</h1>
+    <p class="text-brand-muted mt-1">Actualiza los datos, gestiona imágenes o elimina el registro.</p>
+  </div>
+
+  <ProductForm categories={categories} initialData={initialData} client:load />
+</AdminLayout>
+</file>
+
+<file path="src/pages/api/products/index.ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
+import type { SaleType } from '@/core/types/database';
+import { validateImageFile, parseStringArray, VALID_SALE_TYPES } from '@/lib/api-validators';
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  try {
+    const supabase = createSupabaseServerClient(cookies);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+    }
+
+    const formData = await request.formData();
+    
+    const name = formData.get('name')?.toString();
+    const slug = formData.get('slug')?.toString();
+    const description = formData.get('description')?.toString() || null;
+    const category_id = formData.get('category_id')?.toString() || null;
+    const production_time = formData.get('production_time')?.toString() || null;
+    
+    const is_active = formData.get('is_active') === 'true';
+    const is_featured = formData.get('is_featured') === 'true';
+
+    if (!name || !slug) {
+      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
+    }
+
+    const priceStr = formData.get('price')?.toString();
+    if (!priceStr) {
+      return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
+    }
+    const parsedPrice = parseFloat(priceStr);
+    if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 999999.99) {
+      return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
+    }
+
+    const sale_type = formData.get('sale_type')?.toString() as SaleType;
+    if (!VALID_SALE_TYPES.includes(sale_type)) {
+      return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
+    }
+
+    const features = parseStringArray(formData.get('features')?.toString());
+    const customization_options = parseStringArray(formData.get('customization_options')?.toString());
+
+    const images = formData.getAll('images') as File[];
+    const validImagesToUpload: File[] = [];
+
+    for (const file of images) {
+      if (file && file.size > 0) {
+        const validationError = validateImageFile(file);
+        if (validationError) {
+          return new Response(JSON.stringify({ error: `Error en imagen "${file.name}": ${validationError}` }), { status: 400 });
+        }
+        validImagesToUpload.push(file);
+      }
+    }
+
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .insert([{
+        name,
+        slug,
+        description,
+        price: parsedPrice,
+        category_id,
+        sale_type,
+        production_time,
+        customization_options,
+        features,
+        is_active,
+        is_featured
+      }])
+      .select()
+      .single();
+
+    if (productError || !productData) {
+      return new Response(JSON.stringify({ error: productError?.message || 'Error al crear producto en la base de datos' }), { status: 500 });
+    }
+
+    if (validImagesToUpload.length > 0) {
+      const imageRecords = [];
+      
+      for (let i = 0; i < validImagesToUpload.length; i++) {
+        const file = validImagesToUpload[i];
+        
+        // FIX: Guardia para validación estricta de TypeScript
+        if (!file) continue;
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${productData.id}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          await supabase.from('products').delete().eq('id', productData.id);
+          return new Response(JSON.stringify({ error: `Fallo de red al subir imagen. Se canceló la creación del producto por seguridad.` }), { status: 500 });
+        }
+
+        imageRecords.push({
+          product_id: productData.id,
+          storage_path: fileName,
+          is_primary: i === 0,
+          display_order: i
+        });
+      }
+
+      if (imageRecords.length > 0) {
+        await supabase.from('product_images').insert(imageRecords);
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, data: productData }), { status: 201 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
+      { status: 500 }
+    );
+  }
+};
+</file>
+
 <file path="src/pages/categoria/[slug].astro">
 ---
 import BaseLayout from '@/ui/layouts/BaseLayout.astro';
@@ -2991,6 +2744,156 @@ const layoutProps = {
     </div>
   )}
 
+</BaseLayout>
+</file>
+
+<file path="src/pages/producto/[slug].astro">
+---
+import BaseLayout from '@/ui/layouts/BaseLayout.astro';
+import { getProductBySlug } from '@/features/products/services/publicProducts';
+import { OrderCalculator } from '@/features/products/components/OrderCalculator';
+import { ImageGallery } from '@/features/products/components/ImageGallery';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const product = await getProductBySlug(slug);
+
+if (!product) {
+  return Astro.redirect('/404');
+}
+
+const features: string[] = Array.isArray(product.features) ? (product.features as string[]) : [];
+const customizations: string[] = Array.isArray(product.customization_options) ? (product.customization_options as string[]) : [];
+
+const primaryImage = product.images.find(i => i.is_primary)?.url || product.images[0]?.url;
+
+const layoutProps = {
+  title: product.name,
+  ...(product.description ? { description: product.description } : {}),
+  ...(primaryImage ? { image: primaryImage } : {})
+};
+---
+
+<BaseLayout {...layoutProps}>
+  
+  <script type="application/ld+json" nonce={Astro.locals.cspNonce} set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description || "Diseño en MDF",
+    "image": product.images.map(i => i.url).filter(Boolean),
+    "offers": {
+      "@type": "Offer",
+      "price": product.price,
+      "priceCurrency": product.currency || "USD",
+      "availability": product.is_active ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+    }
+  })} />
+
+  <nav aria-label="Breadcrumb" class="mb-8">
+    <ol class="flex items-center flex-wrap gap-2 text-sm text-brand-muted">
+      <li>
+        <a href="/" class="hover:text-gold transition-colors flex items-center gap-1">
+          <span>🏠</span> Inicio
+        </a>
+      </li>
+      <li><span class="text-brand-border">/</span></li>
+      
+      {product.categories && (
+        <>
+          <li>
+            <a href={`/categoria/${product.categories.slug}`} class="hover:text-gold transition-colors">
+              {product.categories.name}
+            </a>
+          </li>
+          <li><span class="text-brand-border">/</span></li>
+        </>
+      )}
+      
+      <li class="font-semibold text-brand-text truncate max-w-[200px] sm:max-w-md" aria-current="page" title={product.name}>
+        {product.name}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+    
+    <ImageGallery client:load images={product.images} productName={product.name} />
+
+    <div class="flex flex-col">
+      {product.categories && (
+        <span class="text-sm font-bold text-gold-dark tracking-wider uppercase mb-2">
+          {product.categories.name}
+        </span>
+      )}
+      
+      <h1 class="text-4xl font-bold font-serif text-brand-text mb-4 leading-tight">
+        {product.name}
+      </h1>
+      
+      <p class="text-lg text-brand-muted mb-8 leading-relaxed whitespace-pre-line">
+        {product.description}
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-brand-border">
+        {features.length > 0 && (
+          <div>
+            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
+              📋 Características
+            </h3>
+            <ul class="space-y-2">
+              {features.map(feature => (
+                <li class="flex items-start text-brand-muted">
+                  <span class="text-gold mr-2 mt-0.5">✓</span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {customizations.length > 0 && (
+          <div>
+            <h3 class="text-lg font-bold text-brand-text mb-3 flex items-center gap-2">
+              ✨ Personalización
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              {customizations.map(custom => (
+                <span class="bg-cream-200 text-brand-text border border-brand-border text-sm px-3 py-1 rounded-full">
+                  {custom}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div class="mb-8">
+        {product.production_time && (
+          <p class="text-sm text-brand-muted flex items-center gap-2">
+            <span class="text-xl">⏱️</span> 
+            <strong>Tiempo de producción:</strong> {product.production_time}
+          </p>
+        )}
+      </div>
+
+      <div class="mt-auto">
+        <OrderCalculator 
+          client:visible
+          productName={product.name}
+          productSlug={product.slug}
+          price={product.price}
+          currency={product.currency || 'USD'}
+          saleType={product.sale_type || 'docena'}
+        />
+      </div>
+
+    </div>
+  </div>
 </BaseLayout>
 </file>
 
@@ -3323,6 +3226,187 @@ const categories = (data as Category[]) || [];
     <CategoryList client:load initialCategories={categories} />
   )}
 </AdminLayout>
+</file>
+
+<file path="src/pages/api/products/[id].ts">
+import type { APIRoute } from 'astro';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
+import type { SaleType } from '@/core/types/database';
+import { validateImageFile, parseStringArray, VALID_SALE_TYPES } from '@/lib/api-validators';
+
+interface StoragePathItem {
+  storage_path: string;
+}
+
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  try {
+    const id = params.id;
+    const supabase = createSupabaseServerClient(cookies);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    const formData = await request.formData();
+    
+    const name = formData.get('name')?.toString();
+    const slug = formData.get('slug')?.toString();
+    
+    const descRaw = formData.get('description')?.toString();
+    const description = descRaw && descRaw.trim() !== '' ? descRaw.trim() : null;
+    
+    const category_id = formData.get('category_id')?.toString() || null;
+    const production_time = formData.get('production_time')?.toString() || null;
+    
+    const is_active = formData.get('is_active') === 'true';
+    const is_featured = formData.get('is_featured') === 'true';
+
+    if (!name || !slug || !id) {
+      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), { status: 400 });
+    }
+
+    const priceStr = formData.get('price')?.toString();
+    if (!priceStr) {
+      return new Response(JSON.stringify({ error: 'El precio es obligatorio' }), { status: 400 });
+    }
+    const parsedPrice = parseFloat(priceStr);
+    if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 999999.99) {
+      return new Response(JSON.stringify({ error: 'Precio inválido o fuera de rango' }), { status: 400 });
+    }
+
+    const sale_type = formData.get('sale_type')?.toString() as SaleType;
+    if (!VALID_SALE_TYPES.includes(sale_type)) {
+      return new Response(JSON.stringify({ error: 'Modalidad de venta inválida' }), { status: 400 });
+    }
+
+    const features = parseStringArray(formData.get('features')?.toString());
+    const customization_options = parseStringArray(formData.get('customization_options')?.toString());
+    
+    const deletedImages = parseStringArray(formData.get('deleted_images')?.toString());
+    const newImages = formData.getAll('images') as File[];
+    const validImagesToUpload: File[] = [];
+
+    for (const file of newImages) {
+      if (file && file.size > 0) {
+        const validationError = validateImageFile(file);
+        if (validationError) {
+          return new Response(JSON.stringify({ error: `Error en nueva imagen "${file.name}": ${validationError}` }), { status: 400 });
+        }
+        validImagesToUpload.push(file);
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({
+        name,
+        slug,
+        description,
+        price: parsedPrice,
+        category_id,
+        sale_type,
+        production_time,
+        customization_options,
+        features,
+        is_active,
+        is_featured,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
+    }
+
+    if (deletedImages.length > 0) {
+      const { data: validImages } = await supabase
+        .from('product_images')
+        .select('storage_path')
+        .eq('product_id', id);
+        
+      const validPaths = new Set(validImages?.map((i: StoragePathItem) => i.storage_path) || []);
+      const safeDeletedImages = deletedImages.filter((path: string) => validPaths.has(path));
+
+      if (safeDeletedImages.length > 0) {
+        await supabase.storage.from('product-images').remove(safeDeletedImages);
+        await supabase.from('product_images').delete().in('storage_path', safeDeletedImages);
+      }
+    }
+
+    if (validImagesToUpload.length > 0) {
+      const imageRecords = [];
+      for (let i = 0; i < validImagesToUpload.length; i++) {
+        const file = validImagesToUpload[i];
+        
+        // FIX: Guardia para validación estricta de TypeScript
+        if (!file) continue;
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${id}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, file);
+
+        if (!uploadError) {
+          imageRecords.push({
+            product_id: id,
+            storage_path: fileName,
+            is_primary: false,
+            display_order: 99 + i
+          });
+        }
+      }
+
+      if (imageRecords.length > 0) {
+        await supabase.from('product_images').insert(imageRecords);
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
+      { status: 500 }
+    );
+  }
+};
+
+export const DELETE: APIRoute = async ({ params, cookies }) => {
+  try {
+    const id = params.id;
+    const supabase = createSupabaseServerClient(cookies);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+
+    if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
+
+    const { data: images } = await supabase
+      .from('product_images')
+      .select('storage_path')
+      .eq('product_id', id);
+
+    if (images && images.length > 0) {
+      const paths = images.map((img: StoragePathItem) => img.storage_path);
+      await supabase.storage.from('product-images').remove(paths);
+    }
+
+    const { error } = await supabase.from('products').delete().eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor';
+    console.error('[API Error]:', err);
+    return new Response(
+      JSON.stringify({ error: import.meta.env.PROD ? 'Error interno del servidor' : message }), 
+      { status: 500 }
+    );
+  }
+};
 </file>
 
 <file path="src/middleware.ts">
