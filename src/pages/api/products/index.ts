@@ -45,6 +45,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const customization_options = parseStringArray(formData.get('customization_options')?.toString());
 
     const images = formData.getAll('images') as File[];
+    const validImagesToUpload: File[] = [];
+
+    for (const file of images) {
+      if (file && file.size > 0) {
+        const validationError = validateImageFile(file);
+        if (validationError) {
+          return new Response(JSON.stringify({ error: `Error en imagen "${file.name}": ${validationError}` }), { status: 400 });
+        }
+        validImagesToUpload.push(file);
+      }
+    }
 
     const { data: productData, error: productError } = await supabase
       .from('products')
@@ -65,22 +76,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .single();
 
     if (productError || !productData) {
-      return new Response(JSON.stringify({ error: productError?.message || 'Error al crear producto' }), { status: 500 });
+      return new Response(JSON.stringify({ error: productError?.message || 'Error al crear producto en la base de datos' }), { status: 500 });
     }
 
-    if (images.length > 0) {
+    if (validImagesToUpload.length > 0) {
       const imageRecords = [];
       
-      for (let i = 0; i < images.length; i++) {
-        const file = images[i];
+      for (let i = 0; i < validImagesToUpload.length; i++) {
+        const file = validImagesToUpload[i];
         
-        if (!file || file.size === 0) continue;
-        
-        const validationError = validateImageFile(file);
-        if (validationError) {
-           return new Response(JSON.stringify({ error: validationError }), { status: 400 });
-        }
-        
+        // FIX: Guardia para validación estricta de TypeScript
+        if (!file) continue;
+
         const fileExt = file.name.split('.').pop()?.toLowerCase();
         const fileName = `${productData.id}/${crypto.randomUUID()}.${fileExt}`;
 
@@ -88,14 +95,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           .from('product-images')
           .upload(fileName, file);
 
-        if (!uploadError) {
-          imageRecords.push({
-            product_id: productData.id,
-            storage_path: fileName,
-            is_primary: i === 0,
-            display_order: i
-          });
+        if (uploadError) {
+          await supabase.from('products').delete().eq('id', productData.id);
+          return new Response(JSON.stringify({ error: `Fallo de red al subir imagen. Se canceló la creación del producto por seguridad.` }), { status: 500 });
         }
+
+        imageRecords.push({
+          product_id: productData.id,
+          storage_path: fileName,
+          is_primary: i === 0,
+          display_order: i
+        });
       }
 
       if (imageRecords.length > 0) {

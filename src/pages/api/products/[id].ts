@@ -20,7 +20,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     const name = formData.get('name')?.toString();
     const slug = formData.get('slug')?.toString();
     
-    // FIX: Extraemos la descripción limpiando los espacios en blanco de forma segura
     const descRaw = formData.get('description')?.toString();
     const description = descRaw && descRaw.trim() !== '' ? descRaw.trim() : null;
     
@@ -53,6 +52,17 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     
     const deletedImages = parseStringArray(formData.get('deleted_images')?.toString());
     const newImages = formData.getAll('images') as File[];
+    const validImagesToUpload: File[] = [];
+
+    for (const file of newImages) {
+      if (file && file.size > 0) {
+        const validationError = validateImageFile(file);
+        if (validationError) {
+          return new Response(JSON.stringify({ error: `Error en nueva imagen "${file.name}": ${validationError}` }), { status: 400 });
+        }
+        validImagesToUpload.push(file);
+      }
+    }
 
     const { error: updateError } = await supabase
       .from('products')
@@ -91,17 +101,14 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       }
     }
 
-    if (newImages.length > 0) {
+    if (validImagesToUpload.length > 0) {
       const imageRecords = [];
-      for (let i = 0; i < newImages.length; i++) {
-        const file = newImages[i];
-        if (!file || file.size === 0) continue;
+      for (let i = 0; i < validImagesToUpload.length; i++) {
+        const file = validImagesToUpload[i];
         
-        const validationError = validateImageFile(file);
-        if (validationError) {
-           return new Response(JSON.stringify({ error: validationError }), { status: 400 });
-        }
-        
+        // FIX: Guardia para validación estricta de TypeScript
+        if (!file) continue;
+
         const fileExt = file.name.split('.').pop()?.toLowerCase();
         const fileName = `${id}/${crypto.randomUUID()}.${fileExt}`;
 
