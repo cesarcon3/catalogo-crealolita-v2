@@ -58,6 +58,7 @@ src/
     admin/
       components/
         CategoryForm.tsx
+        CategoryList.tsx
         DynamicListInput.tsx
         ImageUploader.tsx
         LoginForm.astro
@@ -142,22 +143,6 @@ Disallow: /admin/
 Disallow: /api/
 
 Sitemap: https://creacioneslolita.com/sitemap.xml
-</file>
-
-<file path="src/core/constants/site.ts">
-export const SITE_CONFIG = {
-  name: 'Creaciones Lolita',
-  description: 'Especialistas en productos personalizados en MDF con corte y grabado láser en Venezuela.',
-  url: 'https://creacioneslolita.com',
-  contact: {
-    whatsapp: '584161452966',
-    defaultMessage: 'Hola, me gustaría obtener información acerca de',
-  },
-  social: {
-    instagram: 'https://www.instagram.com/crealolita/',
-    facebook: 'https://www.facebook.com/people/Crealolita-Diseños-Personalizados-Regalos-Creativos/61578079074035/',
-  },
-} as const;
 </file>
 
 <file path="src/core/types/database.ts">
@@ -472,6 +457,113 @@ export type Category = Tables<'categories'>;
 export type Product = Tables<'products'>;
 export type ProductImage = Tables<'product_images'>;
 export type SaleType = Enums<'sale_type_enum'>;
+</file>
+
+<file path="src/features/admin/components/CategoryList.tsx">
+import React, { useState } from 'react';
+import type { Category } from '@/core/types/database';
+import { ConfirmModal } from '@/ui/components/ConfirmModal';
+
+interface CategoryListProps {
+  initialCategories: Category[];
+}
+
+export const CategoryList: React.FC<CategoryListProps> = ({ initialCategories }) => {
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDeleteClick = (cat: Category) => {
+    setCategoryToDelete(cat);
+    setError('');
+    setIsModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/categories/${categoryToDelete.id}`, { method: 'DELETE' });
+      const result = await res.json();
+
+      if (res.ok) {
+        // Actualizamos la lista instantáneamente sin recargar la página
+        setCategories(categories.filter(c => c.id !== categoryToDelete.id));
+        setIsModalOpen(false);
+      } else {
+        // Mostramos el error elegante dentro de la interfaz, NO en un alert()
+        setError(result.error || 'No se pudo eliminar la categoría.');
+        setIsModalOpen(false);
+      }
+    } catch (err) {
+      setError('Error de conexión con el servidor.');
+      setIsModalOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 font-medium text-sm border-b border-red-100">
+          {error}
+        </div>
+      )}
+      
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
+              <th className="p-4 font-medium">Nombre</th>
+              <th className="p-4 font-medium">Slug (URL)</th>
+              <th className="p-4 font-medium">Descripción</th>
+              <th className="p-4 font-medium text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-brand-border">
+            {categories.length === 0 ? (
+              <tr><td colSpan={4} className="p-8 text-center text-brand-muted italic">No hay categorías registradas.</td></tr>
+            ) : (
+              categories.map((cat) => (
+                <tr key={cat.id} className="hover:bg-cream-50 transition-colors">
+                  <td className="p-4 font-semibold text-brand-text">{cat.name}</td>
+                  <td className="p-4 text-sm text-brand-muted font-mono">{cat.slug}</td>
+                  <td className="p-4 text-sm text-brand-muted truncate max-w-xs">{cat.description || '-'}</td>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-4">
+                      <a href={`/admin/categorias/editar/${cat.id}`} className="text-gold hover:text-gold-dark font-medium text-sm">Editar</a>
+                      <button 
+                        type="button" 
+                        onClick={() => handleDeleteClick(cat)}
+                        className="text-red-500 hover:text-red-700 font-medium text-sm transition-colors"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <ConfirmModal 
+        isOpen={isModalOpen}
+        title="Eliminar Categoría"
+        message={`¿Estás seguro de que deseas eliminar la categoría "${categoryToDelete?.name}"? Si tiene productos vinculados, la acción será bloqueada por seguridad.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setIsModalOpen(false)}
+        isLoading={loading}
+      />
+    </div>
+  );
+};
 </file>
 
 <file path="src/features/admin/components/DynamicListInput.tsx">
@@ -2502,80 +2594,6 @@ const currentPath = Astro.url.pathname;
 </html>
 </file>
 
-<file path="src/ui/layouts/BaseLayout.astro">
----
-import { ClientRouter } from 'astro:transitions';
-import { SITE_CONFIG } from '@/core/constants/site';
-import '@/styles/global.css';
-
-interface Props {
-  title?: string;
-  description?: string;
-  image?: string;
-}
-
-const { 
-  title = SITE_CONFIG.name, 
-  description = SITE_CONFIG.description,
-  image
-} = Astro.props;
-
-const pageTitle = title === SITE_CONFIG.name ? title : `${title} | ${SITE_CONFIG.name}`;
-const canonicalURL = new URL(Astro.url.pathname, SITE_CONFIG.url);
-const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).toString();
----
-
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{pageTitle}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={canonicalURL} />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonicalURL} />
-    <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:site_name" content={SITE_CONFIG.name} />
-
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={canonicalURL} />
-    <meta property="twitter:title" content={pageTitle} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={ogImage} />
-    
-    <ClientRouter />
-  </head>
-  <body class="min-h-screen flex flex-col bg-cream-100 text-brand-text selection:bg-gold selection:text-white">
-    
-    <header class="bg-gradient-to-r from-gold to-gold-dark text-white py-4 shadow-md relative overflow-hidden">
-      <div class="container mx-auto px-4 flex justify-between items-center relative z-10">
-        <a href="/" class="flex items-center gap-3 text-2xl font-bold tracking-wider hover:opacity-90 transition-opacity">
-          <img src="/logo.webp" alt="Logo Creaciones Lolita" class="h-10 w-auto drop-shadow-sm" />
-          <span class="sr-only">Creaciones Lolita</span>
-        </a>
-      </div>
-    </header>
-
-    <main class="flex-grow container mx-auto px-4 py-8">
-      <slot />
-    </main>
-
-    <footer class="bg-cream-200 border-t-2 border-gold py-8 mt-12">
-      <div class="container mx-auto px-4 text-center text-brand-muted">
-        <p>&copy; {new Date().getFullYear()} {SITE_CONFIG.name}. Todos los derechos reservados.</p>
-        <p class="mt-2 text-sm italic">Productos artesanales con amor 💛</p>
-      </div>
-    </footer>
-    
-  </body>
-</html>
-</file>
-
 <file path="src/ui/utils/buttonClasses.ts">
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'whatsapp' | 'danger' | 'neutral';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -2628,6 +2646,22 @@ declare namespace App {
     cspNonce?: string;
   }
 }
+</file>
+
+<file path="src/core/constants/site.ts">
+export const SITE_CONFIG = {
+  name: 'Creaciones Lolita',
+  description: 'Especialistas en productos personalizados en MDF con corte y grabado láser en Venezuela. Creamos piezas únicas y artesanales para decoración, regalos y eventos especiales.',
+  url: 'https://creacioneslolita.com',
+  contact: {
+    whatsapp: '584161452966',
+    defaultMessage: 'Hola, me gustaría obtener información acerca de',
+  },
+  social: {
+    instagram: 'https://www.instagram.com/crealolita/',
+    facebook: 'https://www.facebook.com/people/Crealolita-Diseños-Personalizados-Regalos-Creativos/61578079074035/',
+  },
+} as const;
 </file>
 
 <file path="src/features/admin/components/ImageUploader.tsx">
@@ -2852,66 +2886,6 @@ const products = (rawProducts || []).map((product) => {
     </table>
   </div>
 </div>
-</file>
-
-<file path="src/pages/admin/categorias/index.astro">
----
-import AdminLayout from '@/ui/layouts/AdminLayout.astro';
-import Button from '@/ui/components/Button.astro';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import type { Category } from '@/core/types/database';
-
-const supabase = createSupabaseServerClient(Astro.cookies);
-const { data, error } = await supabase.from('categories').select('*').order('name');
-const categories = (data as Category[]) || [];
----
-
-<AdminLayout title="Categorías">
-  <div class="mb-8 flex justify-between items-center pb-4 border-b border-brand-border">
-    <div>
-      <h1 class="text-3xl font-bold text-gold-dark">Categorías</h1>
-      <p class="text-brand-muted mt-1">Organiza la taxonomía de tus productos.</p>
-    </div>
-    <Button href="/admin/categorias/nuevo" variant="primary" size="sm">+ Nueva Categoría</Button>
-  </div>
-
-  <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
-    {error && (
-  <div class="p-4 bg-red-50 text-red-600">
-    {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error: ${error.message}`}
-  </div>
-)}
-    
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-cream-100 text-brand-muted text-sm uppercase tracking-wider">
-            <th class="p-4 font-medium">Nombre</th>
-            <th class="p-4 font-medium">Slug (URL)</th>
-            <th class="p-4 font-medium">Descripción</th>
-            <th class="p-4 font-medium text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-brand-border">
-          {categories.length === 0 ? (
-            <tr><td colspan="4" class="p-8 text-center text-brand-muted italic">No hay categorías registradas.</td></tr>
-          ) : (
-            categories.map((cat) => (
-              <tr class="hover:bg-cream-50 transition-colors">
-                <td class="p-4 font-semibold text-brand-text">{cat.name}</td>
-                <td class="p-4 text-sm text-brand-muted font-mono">{cat.slug}</td>
-                <td class="p-4 text-sm text-brand-muted truncate max-w-xs">{cat.description || '-'}</td>
-                <td class="p-4 text-right">
-                  <a href={`/admin/categorias/editar/${cat.id}`} class="text-gold hover:text-gold-dark font-medium text-sm">Editar</a>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</AdminLayout>
 </file>
 
 <file path="src/pages/categoria/[slug].astro">
@@ -3319,6 +3293,38 @@ Requiere configuración previa del archivo `.env` con las credenciales de Supaba
 }
 </file>
 
+<file path="src/pages/admin/categorias/index.astro">
+---
+import AdminLayout from '@/ui/layouts/AdminLayout.astro';
+import Button from '@/ui/components/Button.astro';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import type { Category } from '@/core/types/database';
+import { CategoryList } from '@/features/admin/components/CategoryList';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+const { data, error } = await supabase.from('categories').select('*').order('name');
+const categories = (data as Category[]) || [];
+---
+
+<AdminLayout title="Categorías">
+  <div class="mb-8 flex justify-between items-center pb-4 border-b border-brand-border">
+    <div>
+      <h1 class="text-3xl font-bold text-gold-dark">Categorías</h1>
+      <p class="text-brand-muted mt-1">Organiza la taxonomía de tus productos.</p>
+    </div>
+    <Button href="/admin/categorias/nuevo" variant="primary" size="sm">+ Nueva Categoría</Button>
+  </div>
+
+  {error ? (
+    <div class="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 shadow-sm">
+      {import.meta.env.PROD ? 'Error al cargar los datos. Inténtalo de nuevo.' : `Error: ${error.message}`}
+    </div>
+  ) : (
+    <CategoryList client:load initialCategories={categories} />
+  )}
+</AdminLayout>
+</file>
+
 <file path="src/middleware.ts">
 import { defineMiddleware } from 'astro:middleware';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
@@ -3418,6 +3424,97 @@ export const generateSlug = (text: string | undefined | null): string => {
     .replace(/[\s_-]+/g, '-')               // Reemplaza espacios por guiones
     .replace(/^-+|-+$/g, '');               // Limpia guiones al inicio o final
 };
+</file>
+
+<file path="src/ui/layouts/BaseLayout.astro">
+---
+import { ClientRouter } from 'astro:transitions';
+import { SITE_CONFIG } from '@/core/constants/site';
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { 
+  title = SITE_CONFIG.name, 
+  description = SITE_CONFIG.description,
+  image
+} = Astro.props;
+
+const pageTitle = title === SITE_CONFIG.name ? title : `${title} | ${SITE_CONFIG.name}`;
+const canonicalURL = new URL(Astro.url.pathname, SITE_CONFIG.url);
+const ogImage = image ? image : new URL('/social-cover.jpg', SITE_CONFIG.url).toString();
+
+const whatsappLink = `https://wa.me/${SITE_CONFIG.contact.whatsapp}?text=${encodeURIComponent(SITE_CONFIG.contact.defaultMessage)}`;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content={SITE_CONFIG.name} />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={pageTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+    
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen flex flex-col bg-cream-100 text-brand-text selection:bg-gold selection:text-white">
+    
+    <header class="bg-gradient-to-r from-gold to-gold-dark text-white py-4 shadow-md relative overflow-hidden">
+      <div class="container mx-auto px-4 flex justify-between items-center relative z-10">
+        <a href="/" class="flex items-center gap-3 text-2xl font-bold tracking-wider hover:opacity-90 transition-opacity">
+          <img src="/logo.webp" alt="Logo Creaciones Lolita" class="h-10 w-auto drop-shadow-sm" />
+          <span class="sr-only">Creaciones Lolita</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <footer class="bg-cream-200 border-t-2 border-gold py-8 mt-12">
+      <div class="container mx-auto px-4 text-center text-brand-muted">
+        <p>&copy; {new Date().getFullYear()} {SITE_CONFIG.name}. Todos los derechos reservados.</p>
+        <p class="mt-2 text-sm italic">Productos artesanales con amor 💛</p>
+      </div>
+    </footer>
+    
+    <a 
+      href={whatsappLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-[0_4px_14px_0_rgba(37,211,102,0.39)] hover:bg-[#128C7E] hover:scale-110 hover:shadow-[0_6px_20px_rgba(37,211,102,0.5)] transition-all duration-300 z-50 flex items-center justify-center group"
+      aria-label="Contactar por WhatsApp"
+    >
+      <svg viewBox="0 0 24 24" class="w-8 h-8" stroke="none" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+        <path d="M12 0c-6.627 0-12 5.373-12 12 0 2.084.536 4.048 1.494 5.765l-1.494 6.235 6.402-1.455c1.677.876 3.593 1.378 5.598 1.378 6.627 0 12-5.373 12-12s-5.373-12-12-12zm0 21.84c-1.841 0-3.578-.475-5.111-1.314l-.366-.2-3.805.864.88-3.666-.219-.371c-.911-1.547-1.419-3.344-1.419-5.233 0-5.433 4.417-9.84 9.84-9.84 5.433 0 9.84 4.407 9.84 9.84s-4.407 9.84-9.84 9.84z"/>
+      </svg>
+      <span class="absolute right-16 bg-black text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        ¡Chatea con nosotros!
+      </span>
+    </a>
+  </body>
+</html>
 </file>
 
 <file path="astro.config.mjs">

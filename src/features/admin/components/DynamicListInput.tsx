@@ -33,6 +33,13 @@ export const DynamicListInput: React.FC<DynamicListInputProps> = ({
     }
   };
 
+  // FIX: Si el usuario escribe pero olvida hacer clic en "+", autoguardamos al perder el foco
+  const handleBlur = () => {
+    if (currentValue.trim()) {
+      handleAdd();
+    }
+  };
+
   return (
     <div>
       <label htmlFor={inputId} className="block text-sm font-semibold text-brand-text mb-2">{label}</label>
@@ -43,6 +50,7 @@ export const DynamicListInput: React.FC<DynamicListInputProps> = ({
           value={currentValue}
           onChange={(e) => setCurrentValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           placeholder={placeholder}
           className="flex-1 px-4 py-2 border border-brand-border rounded-lg outline-none bg-cream-100 focus:ring-2 focus:ring-gold"
         />

@@ -19,7 +19,11 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     
     const name = formData.get('name')?.toString();
     const slug = formData.get('slug')?.toString();
-    const description = formData.get('description')?.toString() || null;
+    
+    // FIX: Extraemos la descripción limpiando los espacios en blanco de forma segura
+    const descRaw = formData.get('description')?.toString();
+    const description = descRaw && descRaw.trim() !== '' ? descRaw.trim() : null;
+    
     const category_id = formData.get('category_id')?.toString() || null;
     const production_time = formData.get('production_time')?.toString() || null;
     
